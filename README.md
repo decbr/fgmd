@@ -38,6 +38,8 @@ markdown(source, {
 
 For content anyone can write, such as comments, `html: 'sanitize'` lets through a safe, GitHub-like subset of HTML. `markdownInline()` renders a single line without the wrapping `<p>`.
 
+Using React? See [React](docs/react.md).
+
 From PHP, Python, Ruby or Go, use the [CLI](docs/cli.md):
 
 ```sh
@@ -93,6 +95,7 @@ You can also draw any node your own way with a snippet. See [Svelte](docs/svelte
 - [Plugins](docs/plugins.md): the built-ins, and writing your own
 - [Safety](docs/safety.md): what the defaults protect against, and how `html: 'sanitize'` works
 - [Svelte](docs/svelte.md): the component, snippets and props
+- [React](docs/react.md): rendering in React and Next.js
 - [CLI](docs/cli.md): using fgmd from other languages (PHP, etc.)
 - [The tree](docs/tree.md): parsing to a tree, walking it and rendering it
 - [Recipes](docs/recipes.md): option sets for common sites
