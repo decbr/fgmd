@@ -1,5 +1,8 @@
 # fgmd
 
+[![npm](https://img.shields.io/npm/v/@decbr/fgmd?logo=npm)](https://www.npmjs.com/package/@decbr/fgmd)
+[![tests](https://github.com/decbr/fgmd/actions/workflows/test.yml/badge.svg)](https://github.com/decbr/fgmd/actions/workflows/test.yml)
+
 A f***ing good Markdown parser.
 
 - **Correct.** Passes all 652 examples in the CommonMark 0.31.2 spec and all 24 GFM extension examples. The test suite fails if either count ever drops.
