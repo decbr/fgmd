@@ -1,6 +1,6 @@
 {
 	"name": "fgmd",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "A fucking good Markdown parser. CommonMark + GFM, zero dependencies, safe by default, with an HTML renderer, a Svelte renderer and a CLI.",
 	"license": "MIT",
 	"author": "Dec",
