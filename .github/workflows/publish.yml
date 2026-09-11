@@ -1,4 +1,4 @@
-# publishes to npm when a version tag is pushed:
+# publishes to npm when a version tag is pushed, then creates the matching GitHub release:
 #
 #   npm version patch        # or minor / major: bumps, commits, tags vX.Y.Z
 #   git push --follow-tags
@@ -47,3 +47,36 @@ jobs:
 
       # prepack builds dist/ first
       - run: npm publish
+
+  # turns the tag into a GitHub release once npm has the package, so the releases page matches
+  # npm's version list. notes are the commits since the previous tag, minus the version bump.
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # full history and tags, to find the previous tag
+          fetch-depth: 0
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=${GITHUB_REF_NAME#v}
+          prev=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          {
+            echo "**npm:** [$name@$version](https://www.npmjs.com/package/$name/v/$version)"
+            echo
+            echo "## Changes"
+            echo
+            git log --format='- %s (%h)' ${prev:+"$prev.."}"$GITHUB_REF_NAME" | grep -v 'chore: bump version to' || true
+            if [ -n "$prev" ]; then
+              echo
+              echo "**Full changelog:** https://github.com/$GITHUB_REPOSITORY/compare/$prev...$GITHUB_REF_NAME"
+            fi
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag

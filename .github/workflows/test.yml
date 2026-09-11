@@ -1,0 +1,26 @@
+# runs the same checks as publish.yml on every push and pull request, and backs the README's
+# tests badge
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
