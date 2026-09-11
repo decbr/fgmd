@@ -51,29 +51,17 @@ cat post.md | fgmd --plugins callouts,typography > post.html
 Svelte 5 is an optional peer dependency. The `<Markdown>` component takes the same options as `markdown()`, and it renders real elements with no `{@html}`:
 
 ```svelte
-<script lang="ts">
-    import { Markdown } from '@decbr/fgmd/svelte';
-
-    let { source }: { source: string } = $props();
-
-    const external = (url: string) => /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(url);
-    const linkAttrs = (url: string) => (external(url) ? { target: '_blank', rel: 'noreferrer' } : null);
-
-    const classes = {
-        h1: 'text-base-content text-[30px] sm:text-[38px] leading-tight mb-4',
-        h2: 'text-base-content text-[22px] sm:text-[26px] leading-tight mt-10 mb-3',
-        h3: 'text-base-content text-[17px] sm:text-[19px] leading-tight mt-6 mb-2',
-        p: 'mb-4',
-        // etc
-    };
+<script>
+  import { Markdown } from '@decbr/fgmd/svelte';
+  import { callouts } from '@decbr/fgmd';
+  import source from './privacy.md?raw';
 </script>
 
-<div class="flex flex-col text-muted text-[14px] sm:text-[15px] leading-relaxed">
-    <Markdown {source} {classes} {linkAttrs} />
-</div>
-```
+<Markdown {source} plugins={[callouts()]} classes={{ h2: 'text-2xl mt-10', p: 'mb-4 text-muted' }} />
 
-`code` styles inline code only. Code blocks are styled through `pre`.
+<!-- short copy: inline markdown, no <p> -->
+<p class="lede"><Markdown source={game.blurb} inline /></p>
+```
 
 With Vite, a `.md` file can be imported as a string:
 
