@@ -62,7 +62,7 @@ Svelte 5 is an optional peer dependency. The `<Markdown>` component takes the sa
         h2: 'text-base-content text-[22px] sm:text-[26px] leading-tight mt-10 mb-3',
         h3: 'text-base-content text-[17px] sm:text-[19px] leading-tight mt-6 mb-2',
         p: 'mb-4',
-        [...]
+        // etc
     };
 </script>
 
