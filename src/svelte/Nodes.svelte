@@ -141,6 +141,8 @@
 		{node.value}
 	{:else if node.type === 'footnoteDefinition'}
 		<!-- collected into the footnote section -->
+	{:else if node.type === 'yaml'}
+		<!-- frontmatter: metadata, not content -->
 	{:else if node.type === 'text'}
 		{#if ctx.options.breaks && !unwrapped && !block}{#each breakLines(node.value, nodes[index - 1] as PhrasingContent | undefined) as part, i}{#if i > 0}{#if part.br}<br
 						/>{/if}{'\n'}{/if}{part.text}{/each}{:else}{node.value}{/if}

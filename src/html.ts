@@ -226,6 +226,9 @@ class HtmlRenderer {
 			case 'footnoteDefinition':
 				// collected into the footnote section at the end
 				return;
+			case 'yaml':
+				// frontmatter: metadata, not content
+				return;
 			case 'text':
 				return this.text(node.value);
 			case 'break':

@@ -205,6 +205,13 @@ describe('Svelte component matches renderHtml', () => {
 		expect(normalize(svelte({ source: md, ...options }))).toBe(normalize(markdown(md, options)));
 	});
 
+	it('leaves a frontmatter block out, like renderHtml', () => {
+		const md = '---\ntitle: Detour\nblurb: detour blurb\n---\n\ndetour copy\n';
+		const out = svelte({ source: md, frontmatter: true });
+		expect(normalize(out)).toBe(normalize(markdown(md, { frontmatter: true })));
+		expect(out).not.toContain('Detour');
+	});
+
 	it('inline mode', () => {
 		const md = '**hi** _there_ [x](/y)';
 		expect(normalize(svelte({ source: md, inline: true }))).toBe(normalize(markdownInline(md)));

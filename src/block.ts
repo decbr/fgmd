@@ -15,6 +15,7 @@ import type {
 	Root,
 	TableRow
 } from './ast.js';
+import { extractFrontmatter } from './frontmatter.js';
 import { InlineParser, toSticky, trimMd, type FootnoteLabel, type LinkDefinition } from './inline.js';
 import { resolveParseOptions, type ParseOptions, type ResolvedParseOptions } from './options.js';
 import type { ContainerRule, DefinitionRule, FenceRule, LineRule, ParseContext } from './plugin.js';
@@ -903,6 +904,8 @@ export class BlockParser {
 	}
 
 	parse(input: string): Root {
+		const front = this.options.frontmatter ? extractFrontmatter(input) : null;
+		if (front) input = front.body;
 		const lines = input.split(reLineEnding);
 		let length = lines.length;
 		// a final newline doesn't make one more (blank) line
@@ -911,7 +914,12 @@ export class BlockParser {
 		while (this.tip.parent) this.finalize(this.tip, length);
 		this.finalize(this.doc, length);
 		this.processInlines(this.doc);
-		return this.finish({ type: 'root', children: this.convertChildren(this.doc) });
+		const root: Root = { type: 'root', children: this.convertChildren(this.doc) };
+		if (front) {
+			root.children.unshift({ type: 'yaml', value: front.raw as string });
+			root.data = { ...root.data, frontmatter: front.data };
+		}
+		return this.finish(root);
 	}
 
 	// inline markdown only, with the same plugin transforms (and sanitising) as a document

@@ -318,6 +318,7 @@ export function describe(node: Node, options: RenderOptions, headingIds: Readonl
 		case 'tableCell':
 		case 'footnoteReference':
 		case 'footnoteDefinition':
+		case 'yaml':
 			return null;
 		default: {
 			// a node type from a plugin: drawn as its hName, if it has one
@@ -450,7 +451,7 @@ export function splitFootnoteTitle(definition: FootnoteDefinition): { title: Phr
 // node types that are blocks; anything else in a children list is phrasing
 const BLOCK_TYPES = new Set([
 	'paragraph', 'heading', 'thematicBreak', 'blockquote', 'list', 'code', 'table', 'footnoteDefinition',
-	'container', 'math', 'definitionList'
+	'container', 'math', 'definitionList', 'yaml'
 ]);
 
 export function isBlock(node: Node): boolean {

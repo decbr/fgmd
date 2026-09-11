@@ -4,13 +4,25 @@
 //   fgmd post.md                    HTML to stdout
 //   cat post.md | fgmd              same, from stdin
 //   fgmd --options '{"html":true}'  any JSON-expressible option
+//   fgmd --frontmatter post.md      keep a --- metadata block out of the HTML
+//   fgmd --data post.md             print that block's keys and values as JSON instead
 //   fgmd --serve                    one process for a whole build: NDJSON on stdin/stdout,
 //                                   {"src": "...", "options"?: {...}, "inline"?: bool} per line in,
-//                                   {"html": "..."} or {"error": "..."} per line out
+//                                   {"html": "...", "data"?: {...}} or {"error": "..."} per line out
 import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { gemoji } from './emoji-data.js';
-import { emoji, markdown, markdownInline, registerPlugin, VERSION, type MarkdownOptions } from './index.js';
+import {
+	emoji,
+	frontmatter,
+	markdown,
+	markdownInline,
+	parse,
+	registerPlugin,
+	renderHtml,
+	VERSION,
+	type MarkdownOptions
+} from './index.js';
 
 // from the command line, "emoji" means GitHub's full shortcode set
 registerPlugin('emoji', (options) => emoji({ map: gemoji, ...options }));
@@ -26,8 +38,11 @@ options:
   --plugins <names>      built-in plugins, comma separated: abbreviations, attributes,
                          callouts, definitionLists, emoji, math, typography, wikilinks
   --inline               inline markdown only, no <p> around it
+  --frontmatter          read a --- block at the top as metadata: it stays out of the HTML,
+                         and --serve reports it as "data"
+  --data                 print that block's keys and values as JSON, instead of the HTML
   --serve                request per line: {"src": "...", "options"?: {...}, "inline"?: true}
-                         response per line: {"html": "..."} or {"error": "..."}
+                         response per line: {"html": "...", "data"?: {...}} or {"error": "..."}
   -h, --help             this text
   -v, --version          print the version
 `;
@@ -57,17 +72,26 @@ function listOf(raw: string | undefined): string[] {
 		.filter(Boolean);
 }
 
+// HTML, plus the frontmatter keys and values when the document has a block and it was asked for
+function render(source: string, options: MarkdownOptions, inline: boolean): { html: string; data?: Record<string, unknown> } {
+	if (inline) return { html: markdownInline(source, options) };
+	if (!options.frontmatter) return { html: markdown(source, options) };
+	const tree = parse(source, options);
+	const data = tree.data?.frontmatter;
+	return data === undefined ? { html: renderHtml(tree, options) } : { html: renderHtml(tree, options), data };
+}
+
 function serve(base: MarkdownOptions, inlineByDefault: boolean): void {
 	const lines = createInterface({ input: process.stdin, crlfDelay: Infinity });
 	lines.on('line', (line) => {
 		if (line.trim() === '') return;
-		let response: { html: string } | { error: string };
+		let response: { html: string; data?: Record<string, unknown> } | { error: string };
 		try {
 			const request = JSON.parse(line) as { src?: unknown; options?: MarkdownOptions; inline?: boolean };
 			if (typeof request.src !== 'string') throw new Error('request needs a "src" string');
 			const options = { ...base, ...request.options };
 			const inline = request.inline ?? inlineByDefault;
-			response = { html: inline ? markdownInline(request.src, options) : markdown(request.src, options) };
+			response = render(request.src, options, inline);
 		} catch (err) {
 			response = { error: (err as Error).message };
 		}
@@ -80,6 +104,7 @@ function main(argv: string[]): void {
 	let options: MarkdownOptions = {};
 	let serveMode = false;
 	let inline = false;
+	let dataOnly = false;
 	const plugins: string[] = [];
 
 	for (let i = 0; i < argv.length; i++) {
@@ -94,6 +119,8 @@ function main(argv: string[]): void {
 		}
 		if (arg === '--serve') serveMode = true;
 		else if (arg === '--inline') inline = true;
+		else if (arg === '--frontmatter') options = { ...options, frontmatter: true };
+		else if (arg === '--data') dataOnly = true;
 		else if (arg === '--options') options = parseOptions(argv[++i]);
 		else if (arg.startsWith('--options=')) options = parseOptions(arg.slice('--options='.length));
 		else if (arg === '--plugins') plugins.push(...listOf(argv[++i]));
@@ -103,9 +130,12 @@ function main(argv: string[]): void {
 		else file = arg;
 	}
 	if (plugins.length > 0) options = { ...options, plugins: [...(options.plugins ?? []), ...plugins] };
+	// both of these are about the same block, so either flag turns it on
+	if (dataOnly) options = { ...options, frontmatter: true };
 
 	if (serveMode) {
 		if (file !== null) fail('--serve reads requests from stdin, not a file');
+		if (dataOnly) fail('--data renders one document, not a --serve stream');
 		serve(options, inline);
 		return;
 	}
@@ -116,7 +146,11 @@ function main(argv: string[]): void {
 	} catch (err) {
 		fail((err as Error).message, 1);
 	}
-	process.stdout.write(inline ? markdownInline(source, options) : markdown(source, options));
+	if (dataOnly) {
+		process.stdout.write(JSON.stringify(frontmatter(source).data, null, '\t') + '\n');
+		return;
+	}
+	process.stdout.write(render(source, options, inline).html);
 }
 
 main(process.argv.slice(2));

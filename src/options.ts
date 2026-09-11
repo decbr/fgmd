@@ -32,6 +32,9 @@ export interface ParseOptions {
 	// HTML comments are removed by default, so a note left in the source never ships to
 	// readers. set true to keep them as raw HTML (only visible with { html: true }).
 	keepComments?: boolean;
+	// read a `---` block at the top of the document as frontmatter: it stays out of the rendered
+	// output, and its keys and values land on the tree as root.data.frontmatter.
+	frontmatter?: boolean;
 	// extra syntax. plugin objects, or built-in names: ['callouts', 'math', ['emoji', { map }]]
 	plugins?: readonly PluginInput[];
 }
@@ -43,6 +46,7 @@ export interface ResolvedParseOptions {
 	sanitize: SanitizeConfig | null;
 	indentedCode: boolean;
 	keepComments: boolean;
+	frontmatter: boolean;
 	gfm: Required<GfmOptions>;
 	plugins: Plugin[];
 }
@@ -55,6 +59,7 @@ export function resolveParseOptions(options: ParseOptions = {}): ResolvedParseOp
 		sanitize: options.html === 'sanitize' ? resolveSanitize(options.sanitize) : null,
 		indentedCode: options.indentedCode ?? true,
 		keepComments: options.keepComments ?? false,
+		frontmatter: options.frontmatter ?? false,
 		gfm: {
 			tables: on && (gfm.tables ?? true),
 			strikethrough: on && (gfm.strikethrough ?? true),

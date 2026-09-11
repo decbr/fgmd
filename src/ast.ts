@@ -18,6 +18,7 @@ export type Attributes = Record<string, string | number | boolean | null | undef
 export interface Data {
 	hName?: string;
 	hProperties?: Attributes;
+	frontmatter?: Record<string, unknown>;
 	[key: string]: unknown;
 }
 
@@ -76,6 +77,12 @@ export interface Code extends NodeBase {
 	lang: string | null;
 	// the rest of the info string
 	meta: string | null;
+	value: string;
+}
+
+// the frontmatter block at the top of a document, only produced when parsing with { frontmatter: true }.
+export interface Yaml extends NodeBase {
+	type: 'yaml';
 	value: string;
 }
 
@@ -250,6 +257,7 @@ export interface BlockContentMap {
 	html: Html;
 	table: Table;
 	footnoteDefinition: FootnoteDefinition;
+	yaml: Yaml;
 	container: Container;
 	math: Math;
 	definitionList: DefinitionList;

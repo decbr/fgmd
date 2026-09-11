@@ -1,5 +1,6 @@
 import type { PhrasingContent, Root } from './ast.js';
 import { BlockParser, parse } from './block.js';
+import { frontmatter } from './frontmatter.js';
 import { renderHtml } from './html.js';
 import { resolveParseOptions, type MarkdownOptions, type ParseOptions } from './options.js';
 import { registerPlugin } from './plugin.js';
@@ -33,11 +34,12 @@ export type {
 	Plugin,
 	PluginInput
 } from './plugin.js';
+export type { Frontmatter } from './frontmatter.js';
 export type { SanitizeOptions } from './sanitize.js';
 export type { UrlKind, UrlPolicy } from './url.js';
 export type { Visitor } from './visit.js';
 
-export { parse, renderHtml };
+export { frontmatter, parse, renderHtml };
 export { toString } from './inline.js';
 export { registerPlugin, resolvePlugins } from './plugin.js';
 export * from './plugins/index.js';
