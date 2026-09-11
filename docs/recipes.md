@@ -24,6 +24,22 @@ Documents on a site that doesn't allow `{@html}`, with links kept to site paths,
 />
 ```
 
+A page whose title and blurb live in the file, above the copy:
+
+```svelte
+<script>
+  import { frontmatter } from '@decbr/fgmd';
+  import { Markdown } from '@decbr/fgmd/svelte';
+  import source from './detour.md?raw';
+
+  const { data, body } = frontmatter(source);
+</script>
+
+<h1>{data.title}</h1>
+<h2>{data.blurb}</h2>
+<Markdown source={body} />
+```
+
 Short copy with a little formatting:
 
 ```svelte

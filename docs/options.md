@@ -12,6 +12,7 @@ Every option is optional, and `markdown()` takes both kinds. The Svelte componen
 | `gfm` | `true` | `false` turns off every GFM extension. An object `{ tables, strikethrough, tasklists, autolinks, footnotes, tagfilter }` picks individually; everything except `tagfilter` defaults to on. |
 | `indentedCode` | `true` | 4-space indented code blocks. |
 | `keepComments` | `false` | Keep HTML comments. They only render with `html: true`. |
+| `frontmatter` | `false` | Read a `---` block at the top of the document as metadata: it stays out of the output, and its keys and values land on the tree as `root.data.frontmatter`. Off by default, where `---` is a thematic break, as CommonMark says. See [Syntax](syntax.md#frontmatter). |
 
 ## Rendering
 

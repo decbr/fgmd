@@ -9,13 +9,21 @@ cat post.md | fgmd --options '{"html":true,"breaks":true}' --plugins callouts,ty
 
 `--options` takes any JSON-serialisable [option](options.md), and `--plugins` takes [plugin](plugins.md) names.
 
+For pages whose metadata lives in a `---` block at the top of the file, `--frontmatter` keeps that block out of the HTML, and `--data` prints its keys and values as JSON instead of rendering:
+
+```sh
+fgmd --frontmatter example.md > example.html
+fgmd --data example.md
+# { "title": "Page Title", "blurb": "Page Blurb" }
+```
+
 `npm run build` also produces `dist/fgmd.mjs`, the whole CLI in one file with no imports. You can copy it into a project that has no `package.json` and run it with plain `node`. There, the `emoji` plugin includes GitHub's full shortcode set.
 
 ## Serve mode
 
 For builds that render many documents, `--serve` keeps one process alive:
 - **Requests:** one JSON object per line on stdin, `{"src": "…", "options"?: {…}, "inline"?: true}`. `options.plugins` takes names.
-- **Responses:** one line each on stdout, in order: `{"html": "…"}` or `{"error": "…"}`.
+- **Responses:** one line each on stdout, in order: `{"html": "…"}` or `{"error": "…"}`. With `--frontmatter`, a document that has a block also gets `"data"`.
 - **Defaults:** options given on the command line apply to every request.
 
 From PHP:

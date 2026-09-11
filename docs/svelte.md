@@ -60,4 +60,6 @@ The component takes every [option](options.md) except `renderers` and `highlight
 - `ast`: a tree you parsed yourself (see [the tree](tree.md))
 - `inline`
 
+`frontmatter` is an ordinary option, so `<Markdown {source} frontmatter />` renders a file whose metadata block stays out of the page. To use the metadata as well, split the source first with `frontmatter(source)` (see [Recipes](recipes.md)).
+
 It has no `{@html}`. Raw HTML under `html: true` appears as literal text, while `html: 'sanitize'` draws the allowed HTML as real elements. Its output matches `markdown()` element for element; the test suite checks this for every node, option and plugin.

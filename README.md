@@ -38,6 +38,17 @@ markdown(source, {
 
 For content anyone can write, such as comments, `html: 'sanitize'` lets through a safe, GitHub-like subset of HTML. `markdownInline()` renders a single line without the wrapping `<p>`.
 
+A page's metadata can live in the file, in a `---` block above the copy. `frontmatter()` splits it off:
+
+```js
+import { frontmatter } from '@decbr/fgmd';
+
+const { data, body } = frontmatter(source);
+// data: { "title": "Page Title", "blurb": "Page Blurb" }, body: the Markdown after the block
+```
+
+`markdown(source, { frontmatter: true })` renders the same file with the block left out. See [Syntax](docs/syntax.md#frontmatter).
+
 Using React? See [React](docs/react.md).
 
 From PHP, Python, Ruby or Go, use the [CLI](docs/cli.md):
@@ -74,7 +85,7 @@ With Vite, a `.md` file can be imported as a string:
 <Prose source={privacy} />
 ```
 
-You can also draw any node your own way with a snippet. See [Svelte](docs/svelte.md).
+You can also draw any node your own way with a snippet. For that, and more, see [Svelte](docs/svelte.md).
 
 ## Documentation
 
@@ -87,7 +98,7 @@ You can also draw any node your own way with a snippet. See [Svelte](docs/svelte
 - [CLI](docs/cli.md): using fgmd from other languages (PHP, etc.)
 - [The tree](docs/tree.md): parsing to a tree, walking it and rendering it
 - [Recipes](docs/recipes.md): option sets for common sites
-- [Development](docs/development.md)
+- [Development](docs/development.md): tests, spec reports and regenerating data
 
 ## License
 

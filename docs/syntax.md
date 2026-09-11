@@ -32,6 +32,39 @@
 
 Everything else lives in [plugins](plugins.md).
 
+## Frontmatter
+
+A `---` block at the top of a file holds a page's metadata. `frontmatter()` splits a document in two, without parsing the Markdown:
+
+```js
+import { frontmatter, markdown } from '@decbr/fgmd';
+
+const { data, body } = frontmatter(source);
+// data: { title: 'Detour', blurb: 'detour blurb' }, body: the Markdown after the block
+markdown(body);
+```
+
+```md
+---
+title: Detour
+blurb: detour blurb
+---
+
+detour copy
+```
+
+`markdown(source, { frontmatter: true })` renders the same document with the block left out, and `parse()` puts the values on the tree as `root.data.frontmatter` (see [the tree](tree.md)). It is opt-in: without it `---` is a thematic break, which is what CommonMark says, and a `---` block followed by prose rather than `key: value` lines is never treated as metadata either.
+
+The YAML is the subset that belongs in frontmatter, following YAML 1.2:
+- `key: value` mappings, nested by indentation.
+- Sequences, indented or not, and sequences of mappings.
+- Flow collections: `[one, two]`, `{ min: 2, max: 4 }`.
+- Quoted and plain scalars, numbers, `true`/`false`, `null`/`~`/nothing.
+- Block scalars `|` and `>`, with `-`/`+` chomping and an indentation indicator.
+- `#` comments, whole-line or after a value.
+
+Dates, versions and times stay strings, as written. Anything it can't make sense of stays a string too: nothing in a metadata block can throw.
+
 ## Coming from a regex-based parser
 
 fgmd follows the spec, so a few things written for a looser parser come out differently:

@@ -63,9 +63,30 @@ describe('cli', () => {
 		expect(JSON.parse(result.stdout)).toEqual({ html: '<p><i>x</i></p>\n' });
 	});
 
+	it('keeps a frontmatter block out of the HTML, and reports it with --data', () => {
+		const file = join(dir, 'detour.md');
+		writeFileSync(file, '---\ntitle: Detour\nblurb: detour blurb\n---\n\ndetour copy\n');
+		expect(run([file, '--frontmatter']).stdout).toBe('<p>detour copy</p>\n');
+		expect(JSON.parse(run([file, '--data']).stdout)).toEqual({ title: 'Detour', blurb: 'detour blurb' });
+		// without the flag, --- is a thematic break
+		expect(run([file]).stdout).toContain('<hr />');
+	});
+
+	it('serves the frontmatter values alongside the HTML', () => {
+		const input = [
+			JSON.stringify({ src: '---\ntitle: Detour\n---\n\ncopy\n' }),
+			JSON.stringify({ src: 'no block here' }),
+			''
+		].join('\n');
+		const lines = run(['--serve', '--frontmatter'], input).stdout.trim().split('\n').map((l) => JSON.parse(l));
+		expect(lines[0]).toEqual({ html: '<p>copy</p>\n', data: { title: 'Detour' } });
+		expect(lines[1]).toEqual({ html: '<p>no block here</p>\n' });
+	});
+
 	it('rejects bad arguments with exit code 2', () => {
 		expect(run(['--options', '[1]']).status).toBe(2);
 		expect(run(['--nope']).status).toBe(2);
+		expect(run(['--serve', '--data']).status).toBe(2);
 	});
 
 	it('fails with exit code 1 on a missing file', () => {
