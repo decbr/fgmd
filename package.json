@@ -1,9 +1,9 @@
 {
-	"name": "fgmd",
+	"name": "@decbr/fgmd",
 	"version": "0.2.0",
-	"description": "A fucking good Markdown parser. CommonMark + GFM, zero dependencies, safe by default, with an HTML renderer, a Svelte renderer and a CLI.",
+	"description": "a f***ing good markdown parser.",
 	"license": "MIT",
-	"author": "Dec",
+	"author": "decbr",
 	"type": "module",
 	"keywords": [
 		"markdown",
@@ -32,12 +32,15 @@
 		"./package.json": "./package.json"
 	},
 	"bin": {
-		"fgmd": "./dist/cli.js"
+		"fgmd": "dist/cli.js"
 	},
 	"files": [
 		"dist",
 		"!dist/**/*.test.*"
 	],
+	"publishConfig": {
+		"access": "public"
+	},
 	"engines": {
 		"node": ">=18"
 	},

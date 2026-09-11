@@ -114,7 +114,7 @@ export function math(options: MathOptions = {}): Plugin {
 }
 
 export interface EmojiOptions {
-	// shortcode -> emoji. import { gemoji } from 'fgmd/emoji' for GitHub's full set
+	// shortcode -> emoji. import { gemoji } from '@decbr/fgmd/emoji' for GitHub's full set
 	map?: Readonly<Record<string, string>>;
 	// for anything else, e.g. custom images: return a string, a node, or nothing to leave it
 	lookup?: (name: string) => string | PhrasingContent | null | undefined;

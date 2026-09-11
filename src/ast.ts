@@ -5,7 +5,7 @@
 //
 // plugins add node types by augmenting the content maps, the same way mdast does:
 //
-//   declare module 'fgmd' {
+//   declare module '@decbr/fgmd' {
 //     interface PhrasingContentMap { mention: Mention }
 //   }
 

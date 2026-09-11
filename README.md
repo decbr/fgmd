@@ -1,6 +1,6 @@
 # fgmd
 
-A f***ing good markdown parser.
+A f***ing good Markdown parser.
 
 - **Correct.** Passes all 652 examples in the CommonMark 0.31.2 spec and all 24 GFM extension examples. The test suite fails if either count ever drops.
 - **Safe by default.** Raw HTML shows up as text unless you opt in, and `html: 'sanitize'` allows a GitHub-like subset rebuilt as real elements. Links and images may only use http, https, mailto, tel, or relative URLs. The Svelte component contains no `{@html}`, and hostile input can't hang or crash the parser.
@@ -10,11 +10,11 @@ A f***ing good markdown parser.
 - **Zero runtime dependencies.** The library uses no Node APIs (only the CLI does), so it runs in Node, Deno and browsers alike.
 
 ```sh
-npm install fgmd
+npm install @decbr/fgmd
 ```
 
 ```js
-import { markdown, callouts, math } from 'fgmd';
+import { markdown, callouts, math } from '@decbr/fgmd';
 
 markdown('# Hello *world*');
 // '<h1>Hello <em>world</em></h1>\n'
@@ -58,8 +58,8 @@ Everything else lives in plugins.
 Pass plugins as objects, or by name so plain JSON configs (the CLI, PHP) can use them:
 
 ```js
-import { markdown, callouts, typography, emoji } from 'fgmd';
-import { gemoji } from 'fgmd/emoji';
+import { markdown, callouts, typography, emoji } from '@decbr/fgmd';
+import { gemoji } from '@decbr/fgmd/emoji';
 
 markdown(source, { plugins: [callouts(), typography({ smart: { quotes: '„“‚‘' } }), emoji({ map: gemoji })] });
 markdown(source, { plugins: ['callouts', 'typography', ['emoji', { map: { tada: '🎉' } }]] });
@@ -73,7 +73,7 @@ markdown(source, { plugins: ['callouts', 'typography', ['emoji', { map: { tada: 
 | `definitionLists()` | `Term` then `: definition` lines. Indented lines continue a definition, and a blank line after the term makes it loose. | `<dl><dt><dd>` |
 | `abbreviations({ titles })` | `*[HTML]: HyperText Markup Language` anywhere in the document, plus `titles` from options | `<abbr title="…">HTML</abbr>` on whole words |
 | `math({ render })` | `$inline$` (Pandoc rules: `$5 and $10` stays money), `$$display$$`, and `$$` fenced blocks | `<span class="math math-inline">` / `<div class="math math-display">` holding escaped TeX, ready for KaTeX auto-render. Pass `render: (tex, { display }) => katex.renderToString(tex, { displayMode: display })` for HTML output |
-| `emoji({ map, lookup })` | `:shortcode:` | the emoji. `fgmd/emoji` exports GitHub's full set (`gemoji`); `lookup` can return nodes, e.g. custom images |
+| `emoji({ map, lookup })` | `:shortcode:` | the emoji. `@decbr/fgmd/emoji` exports GitHub's full set (`gemoji`); `lookup` can return nodes, e.g. custom images |
 | `wikilinks({ resolve, exists, embeds, resolveEmbed })` | `[[Page]]`, `[[Page\|label]]`, `[[Page#Heading]]`, `![[image.png]]` | `<a class="wikilink">`, plus `wikilink-new` when `exists(page)` is false |
 
 ### Writing a plugin
@@ -81,7 +81,7 @@ markdown(source, { plugins: ['callouts', 'typography', ['emoji', { map: { tada: 
 A plugin is a plain object. Every hook is optional:
 
 ```ts
-import { mapText, type Plugin } from 'fgmd';
+import { mapText, type Plugin } from '@decbr/fgmd';
 
 const mentions: Plugin = {
   name: 'mentions',
@@ -128,7 +128,7 @@ A node type neither renderer knows draws itself from `data.hName`/`data.hPropert
 For TypeScript, declare custom nodes the way mdast does:
 
 ```ts
-declare module 'fgmd' {
+declare module '@decbr/fgmd' {
   interface PhrasingContentMap { insert: { type: 'insert'; children: PhrasingContent[] } }
 }
 ```
@@ -194,8 +194,8 @@ Svelte 5 is an optional peer dependency.
 
 ```svelte
 <script>
-  import { Markdown } from 'fgmd/svelte';
-  import { callouts } from 'fgmd';
+  import { Markdown } from '@decbr/fgmd/svelte';
+  import { callouts } from '@decbr/fgmd';
   import source from './privacy.md?raw';
 </script>
 
@@ -281,7 +281,7 @@ function markdown(string $text): string {
 ## The tree
 
 ```js
-import { parse, parseInline, renderHtml, toString, visit, mapText } from 'fgmd';
+import { parse, parseInline, renderHtml, toString, visit, mapText } from '@decbr/fgmd';
 
 const tree = parse(source, { plugins: ['math'] });   // plain JSON: read it, transform it, cache it
 visit(tree, (node) => { if (node.type === 'heading') console.log(toString(node.children)); });
