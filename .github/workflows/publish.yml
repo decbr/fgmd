@@ -1,0 +1,49 @@
+# publishes to npm when a version tag is pushed:
+#
+#   npm version patch        # or minor / major: bumps, commits, tags vX.Y.Z
+#   git push --follow-tags
+#
+# uses npm trusted publishing (OIDC), so there's no token to store or leak, and every release
+# gets a provenance attestation linking it to this workflow run. one-time setup on npmjs.com:
+# package settings -> Trusted publishing -> GitHub Actions, user decbr, repository fgmd,
+# workflow publish.yml.
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  # lets the job prove to npm which repository and workflow it is
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - name: Tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+
+      - run: npm run check
+      - run: npm test
+
+      # trusted publishing needs npm 11.5.1 or newer
+      - run: npm install -g npm@latest
+
+      # prepack builds dist/ first
+      - run: npm publish

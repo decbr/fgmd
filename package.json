@@ -4,6 +4,12 @@
 	"description": "a f***ing good markdown parser.",
 	"license": "MIT",
 	"author": "decbr",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/decbr/fgmd.git"
+	},
+	"homepage": "https://github.com/decbr/fgmd#readme",
+	"bugs": "https://github.com/decbr/fgmd/issues",
 	"type": "module",
 	"keywords": [
 		"markdown",
@@ -51,7 +57,8 @@
 		"spec": "node scripts/spec-report.mjs",
 		"fetch-spec": "node scripts/fetch-spec.mjs",
 		"gen-entities": "node scripts/gen-entities.mjs",
-		"prepack": "npm run build"
+		"prepack": "npm run build",
+		"version": "node scripts/sync-version.mjs && git add src/version.ts"
 	},
 	"peerDependencies": {
 		"svelte": "^5.0.0"
