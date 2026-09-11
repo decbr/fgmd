@@ -1,6 +1,6 @@
 # fgmd
 
-A fucking good Markdown parser. One parser for every site: CommonMark and GitHub-flavoured Markdown in, and out comes an HTML string, a Svelte component, or a tree. Extend it with plugins, restyle it with snippets, and let strangers type into it.
+A f***ing good markdown parser.
 
 - **Correct.** Passes all 652 examples in the CommonMark 0.31.2 spec and all 24 GFM extension examples. The test suite fails if either count ever drops.
 - **Safe by default.** Raw HTML shows up as text unless you opt in, and `html: 'sanitize'` allows a GitHub-like subset rebuilt as real elements. Links and images may only use http, https, mailto, tel, or relative URLs. The Svelte component contains no `{@html}`, and hostile input can't hang or crash the parser.
