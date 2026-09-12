@@ -3,11 +3,8 @@
 	"name": "fgmd-site",
 	"main": "src/worker.ts",
 	"account_id": "b133cd60e283be79857f759e6de0c557",
-	// every page is rendered from markdown that was bundled at build time, so the Worker needs
-	// nothing else at runtime: no KV, no assets binding, no origin
 	"compatibility_date": "2026-09-11",
 	"minify": true,
-	// the site has one address. flip this to true to get a fgmd-site.*.workers.dev url as well
 	"workers_dev": false,
 	"routes": [{ "pattern": "fgmd.dev", "custom_domain": true }],
 	"observability": { "enabled": true }
