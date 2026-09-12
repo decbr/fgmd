@@ -18,6 +18,8 @@ export function Markdown({ source }) {
 
 Keep the options outside the component, or add them to `useMemo`'s dependencies if they change.
 
+When this runs in the browser, fgmd decodes named entities like `&copy;` with the browser's own HTML parser instead of shipping its 2,000-name table, and the output is the same as on the server (see [Svelte](svelte.md#bundle-size)).
+
 For a single line without the wrapping `<p>`, use `markdownInline()`:
 
 ```jsx

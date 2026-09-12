@@ -13,7 +13,7 @@ View the site at [fgmd.dev](https://fgmd.dev/), view the site's source at [/site
 - **Standard.** Passes all 652 CommonMark 0.31.2 spec examples and all 24 GFM extension examples.
 - **Safe by default.** Raw HTML is shown as text unless you opt in, and only http, https, mailto, tel and relative URLs get through. Hostile input can't hang or crash it.
 - **Extensible.** Eight built-in plugins, plus a plugin API for new inline syntax, block syntax and tree transforms.
-- **Zero runtime dependencies.** The library uses no Node APIs, so it runs in Node, Deno and browsers. It has a first-class Svelte 5 component and a CLI for other languages.
+- **Zero runtime dependencies.** The library uses no Node APIs, so it runs in Node, Deno, Workers and browsers. It has a first-class Svelte 5 component and a CLI for other languages.
 
 ## Install
 
@@ -66,15 +66,15 @@ Svelte 5 is an optional peer dependency. The `<Markdown>` component takes the sa
 
 ```svelte
 <script>
-  import { Markdown } from '@decbr/fgmd/svelte';
+  import { InlineMarkdown, Markdown } from '@decbr/fgmd/svelte';
   import { callouts } from '@decbr/fgmd';
   import source from './privacy.md?raw';
 </script>
 
 <Markdown {source} plugins={[callouts()]} classes={{ h2: 'text-2xl mt-10', p: 'mb-4 text-muted' }} />
 
-<!-- short copy: inline markdown, no <p> -->
-<p class="lede"><Markdown source={game.blurb} inline /></p>
+<!-- short copy: inline markdown, no <p>. leaves the block parser out of the bundle -->
+<p class="lede"><InlineMarkdown source={game.blurb} /></p>
 ```
 
 With Vite, a `.md` file can be imported as a string:

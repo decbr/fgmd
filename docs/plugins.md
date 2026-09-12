@@ -12,6 +12,8 @@ markdown(source, { plugins: [callouts(), typography({ smart: { quotes: '„“�
 markdown(source, { plugins: ['callouts', 'typography', ['emoji', { map: { tada: '🎉' } }]] });
 ```
 
+Names are registered when `@decbr/fgmd` is imported. The Svelte components don't import it, to keep bundles small, so in a component pass the plugin itself: `plugins={[callouts()]}`. A name only works there if code that also runs in the browser imports `@decbr/fgmd`; an import in server-only code (such as `+page.server.ts`) lets the server render the page and then fails during hydration.
+
 | plugin | syntax | output |
 | --- | --- | --- |
 | `callouts({ types, className, containers })` | GitHub alerts `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]` (plus your own types). A title can follow the marker: `> [!TIP] Pro tip`. `[!NOTE]-` / `[!NOTE]+` make it collapsible, starting closed or open. `:::name Title` … `:::` containers; `:::details` folds. | `<aside class="callout callout-note"><p class="callout-title">…`, `<details>` when collapsible, `<div class="name">` for other containers |

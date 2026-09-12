@@ -40,10 +40,10 @@ A page whose title and blurb live in the file, above the copy:
 <Markdown source={body} />
 ```
 
-Short copy with a little formatting:
+Short copy with a little formatting. `InlineMarkdown` keeps the block parser out of the bundle (see [Svelte](svelte.md#inlinemarkdown)):
 
 ```svelte
 {#each game.description as paragraph}
-  <p><Markdown source={paragraph} inline /></p>
+  <p><InlineMarkdown source={paragraph} /></p>
 {/each}
 ```
