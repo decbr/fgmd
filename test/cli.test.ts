@@ -19,7 +19,19 @@ beforeAll(async () => {
 		format: 'esm',
 		platform: 'node',
 		outfile: cli,
-		logLevel: 'error'
+		logLevel: 'error',
+		plugins: [
+			{
+				// package.json "imports" points #named-entity at dist/, which a fresh checkout (CI) hasn't
+				// built yet. the CLI runs on node, so it's the table version either way
+				name: 'named-entity-source',
+				setup(b) {
+					b.onResolve({ filter: /^#named-entity$/ }, () => ({
+						path: new URL('../src/named-entity.ts', import.meta.url).pathname
+					}));
+				}
+			}
+		]
 	});
 });
 
