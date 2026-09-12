@@ -19,7 +19,7 @@ Every option is optional, and `markdown()` takes both kinds. The Svelte componen
 | option | default | |
 | --- | --- | --- |
 | `breaks` | `false` | Render single newlines as `<br>`, the way GitHub comments do. |
-| `allowedSchemes` | `['http','https','mailto','tel']` | URL schemes links and images may use. Relative URLs are always allowed. |
+| `allowedSchemes` | `['http', 'https', 'mailto', 'tel']` | URL schemes links and images may use. Relative URLs are always allowed. |
 | `urlPolicy` | | `(url, kind) => url \| null`. Full control: return a (possibly rewritten) URL, or `null` to reject. A rejected link renders as its plain label, a rejected image as its alt text. Also applies to sanitised HTML. |
 | `linkAttrs` | | `(url) => attributes`, e.g. `target`/`rel` for external links. |
 | `classes` | | A class per element name: `{ p: 'mb-4', a: 'text-accent', code: 'font-mono', aside: 'callout' }`. `code` is inline code only; code blocks take the `pre` class. |

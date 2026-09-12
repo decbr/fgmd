@@ -12,8 +12,12 @@
 	--font-mark: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
 	--font-prose: 'Newsreader', Iowan Old Style, Palatino, Georgia, serif;
 
+	/* --column is the measure: how wide a line of text is allowed to get. --wide is the frame a
+	 * doc page draws that measure inside, and the width the things that cannot wrap get instead. */
 	--column: 40rem;
 	--gutter: 1.5rem;
+	--measure: calc(var(--column) - var(--gutter) * 2);
+	--wide: 66rem;
 	--margin-note: 15rem;
 
 	color-scheme: light dark;
@@ -573,6 +577,37 @@ body.home .prose h1 {
 
 .proof :is(.callout, blockquote, table) {
 	margin: 0;
+}
+
+/*  wide blocks  */
+
+/* a doc page sets its prose to the same measure as the masthead and footer, and reads exactly as
+ * it did. main is unbounded so the space beside that measure is real margin to reach into: the
+ * measure is what centres the page now, not main. */
+body.doc main {
+	max-width: none;
+}
+
+body.doc .prose > * {
+	max-width: var(--measure);
+	margin-inline: auto;
+}
+
+/* the three things that cannot reflow start at the same left edge as the prose and reach right
+ * into the margin instead of scrolling. each is as wide as it needs to be and no wider, so the
+ * shared left edge is what ties them to the text - a centred one would leave every block sitting
+ * on a different margin. width is capped by the space actually there, so nothing overflows. */
+body.doc .prose > :is(pre, .table-scroll, .proof) {
+	/* how far the block is inset to meet the prose, and so how much room is left to its right.
+	 * a pre wraps nowhere, so its min-content is its longest line: fit-content alone would size
+	 * to that line and run off the screen. the cap is what puts the scrollbar back. */
+	--indent: max(0px, calc((100% - var(--measure)) / 2));
+
+	width: fit-content;
+	min-width: min(100%, var(--measure));
+	max-width: min(var(--wide), calc(100% - var(--indent)));
+	margin-left: var(--indent);
+	margin-right: auto;
 }
 
 /*  narrow  */
