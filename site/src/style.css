@@ -581,11 +581,10 @@ body.home .prose h1 {
 
 /*  wide blocks  */
 
-/* a doc page sets its prose to the same measure as the masthead and footer, and reads exactly as
- * it did. main is unbounded so the space beside that measure is real margin to reach into: the
- * measure is what centres the page now, not main. */
+/* a doc page keeps the measure the masthead and footer are set to, and sits it in a wider frame.
+ * the frame is bounded and centred, so the page has two margins, not one. */
 body.doc main {
-	max-width: none;
+	max-width: var(--wide);
 }
 
 body.doc .prose > * {
@@ -593,21 +592,15 @@ body.doc .prose > * {
 	margin-inline: auto;
 }
 
-/* the three things that cannot reflow start at the same left edge as the prose and reach right
- * into the margin instead of scrolling. each is as wide as it needs to be and no wider, so the
- * shared left edge is what ties them to the text - a centred one would leave every block sitting
- * on a different margin. width is capped by the space actually there, so nothing overflows. */
+/* the three things that cannot reflow are the only ones allowed past the measure, and they grow
+ * from the centre out like everything else - each as wide as it needs to be and no wider, never
+ * narrower than the measure, so a short one still lines up with the prose.
+ * a pre wraps nowhere, so its min-content is its longest line: fit-content alone would size to
+ * that line and run off the frame. the max-width is what puts the scrollbar back. */
 body.doc .prose > :is(pre, .table-scroll, .proof) {
-	/* how far the block is inset to meet the prose, and so how much room is left to its right.
-	 * a pre wraps nowhere, so its min-content is its longest line: fit-content alone would size
-	 * to that line and run off the screen. the cap is what puts the scrollbar back. */
-	--indent: max(0px, calc((100% - var(--measure)) / 2));
-
 	width: fit-content;
 	min-width: min(100%, var(--measure));
-	max-width: min(var(--wide), calc(100% - var(--indent)));
-	margin-left: var(--indent);
-	margin-right: auto;
+	max-width: 100%;
 }
 
 /*  narrow  */

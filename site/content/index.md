@@ -1,6 +1,6 @@
 ---
 title: fgmd
-description: A Markdown parser that passes every CommonMark and GFM spec example, has no dependencies, and renders this entire site from .md files.
+description: A Markdown parser that passes every CommonMark and GFM spec example with no dependencies.
 ---
 
 # a f***ing good markdown parser
