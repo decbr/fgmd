@@ -4,8 +4,11 @@
 [![tests](https://github.com/decbr/fgmd/actions/workflows/test.yml/badge.svg)](https://github.com/decbr/fgmd/actions/workflows/test.yml)
 [![docs](https://img.shields.io/badge/docs-yes-brightgreen.svg)](https://github.com/decbr/fgmd/tree/master/docs)
 [![licence](https://img.shields.io/npm/l/@decbr/fgmd)](https://github.com/decbr/fgmd/blob/master/LICENSE)
+[![site](https://img.shields.io/badge/site-view-blue.svg)](https://fgmd.dev)
 
 A f***ing good Markdown parser.
+
+View the site at [fgmd.dev](https://fgmd.dev/), view the site's source at [/site](/site)
 
 - **Standard.** Passes all 652 CommonMark 0.31.2 spec examples and all 24 GFM extension examples.
 - **Safe by default.** Raw HTML is shown as text unless you opt in, and only http, https, mailto, tel and relative URLs get through. Hostile input can't hang or crash it.
