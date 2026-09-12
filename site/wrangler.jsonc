@@ -1,0 +1,7 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "fgmd-site",
+	"main": "src/worker.ts",
+	"compatibility_date": "2025-09-12",
+	"observability": { "enabled": true }
+}

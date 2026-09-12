@@ -1,0 +1,596 @@
+:root {
+	--paper: #f1f2ef;
+	--raised: #fbfbf9;
+	--ink: #17202b;
+	--soft: #56606e;
+	--rule: #d9dbd4;
+	--proof: #c8264a;
+	--proof-wash: rgb(200 38 74 / 9%);
+	--flag: #9a6412;
+	--code: #e8eae4;
+
+	--font-mark: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+	--font-prose: 'Newsreader', Iowan Old Style, Palatino, Georgia, serif;
+
+	--column: 40rem;
+	--gutter: 1.5rem;
+	--margin-note: 15rem;
+
+	color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--paper: #12161a;
+		--raised: #181d22;
+		--ink: #e4e7e2;
+		--soft: #99a3ad;
+		--rule: #2a3138;
+		--proof: #ff5c77;
+		--proof-wash: rgb(255 92 119 / 12%);
+		--flag: #d9a441;
+		--code: #1b2127;
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-prose);
+	font-size: 1.15rem;
+	line-height: 1.7;
+	font-synthesis-weight: none;
+	text-rendering: optimizeLegibility;
+}
+
+::selection {
+	background: var(--proof-wash);
+}
+
+:focus-visible {
+	outline: 2px solid var(--proof);
+	outline-offset: 3px;
+	border-radius: 1px;
+}
+
+.skip {
+	position: absolute;
+	left: -9999px;
+}
+
+.skip:focus {
+	left: var(--gutter);
+	top: 0.5rem;
+	z-index: 2;
+	background: var(--raised);
+	padding: 0.5rem 0.75rem;
+	font-family: var(--font-mark);
+	font-size: 0.85rem;
+}
+
+/*  frame  */
+
+.masthead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.75rem 2rem;
+	max-width: var(--column);
+	margin: 0 auto;
+	padding: 1.5rem var(--gutter) 1.25rem;
+	border-bottom: 1px solid var(--rule);
+}
+
+.wordmark {
+	font-family: var(--font-mark);
+	font-weight: 600;
+	font-size: 1.05rem;
+	letter-spacing: -0.01em;
+	color: inherit;
+	text-decoration: none;
+}
+
+.wordmark span {
+	color: var(--proof);
+}
+
+.site-nav ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.site-nav a {
+	font-family: var(--font-mark);
+	font-size: 0.82rem;
+	color: var(--soft);
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	padding-bottom: 1px;
+}
+
+.site-nav a:hover {
+	color: var(--ink);
+	border-bottom-color: var(--proof);
+}
+
+main {
+	max-width: var(--column);
+	margin: 0 auto;
+	padding: 3rem var(--gutter) 4rem;
+}
+
+.site-footer {
+	max-width: var(--column);
+	margin: 0 auto;
+	padding: 1.5rem var(--gutter) 4rem;
+	border-top: 1px solid var(--rule);
+	font-size: 0.95rem;
+	color: var(--soft);
+}
+
+.site-footer p {
+	margin: 0.4rem 0;
+}
+
+.site-footer ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1.5rem;
+	margin: 0.4rem 0;
+	padding: 0;
+	list-style: none;
+	font-family: var(--font-mark);
+	font-size: 0.82rem;
+}
+
+.source-note {
+	font-family: var(--font-mark);
+	font-size: 0.78rem;
+	line-height: 1.6;
+	color: var(--soft);
+}
+
+/*  headings and the marks that made them  */
+
+.prose :is(h1, h2, h3, h4, h5, h6) {
+	position: relative;
+	font-family: var(--font-mark);
+	font-weight: 600;
+	line-height: 1.2;
+	letter-spacing: -0.015em;
+	text-wrap: balance;
+}
+
+.prose h1 {
+	font-size: 2.1rem;
+	margin: 0 0 1.25rem;
+}
+
+.prose h2 {
+	font-size: 1.35rem;
+	margin: 3rem 0 0.85rem;
+}
+
+.prose h3 {
+	font-size: 1.08rem;
+	margin: 2.25rem 0 0.6rem;
+}
+
+.prose :is(h4, h5, h6) {
+	font-size: 0.95rem;
+	margin: 1.75rem 0 0.5rem;
+	color: var(--soft);
+}
+
+/* the '#' fgmd writes before a heading is hidden, and drawn again in the margin with as many
+ * hashes as the heading is deep - the characters that are actually in the file */
+.prose .anchor {
+	position: absolute;
+	right: 100%;
+	padding-right: 0.6rem;
+	font-size: 0;
+	text-decoration: none;
+	color: var(--proof);
+	opacity: 0.45;
+	transition: opacity 0.15s ease;
+}
+
+.prose .anchor::before {
+	font-family: var(--font-mark);
+	font-size: 0.95rem;
+	font-weight: 500;
+}
+
+.prose h1 .anchor::before { content: '#'; }
+.prose h2 .anchor::before { content: '##'; }
+.prose h3 .anchor::before { content: '###'; }
+.prose h4 .anchor::before { content: '####'; }
+.prose h5 .anchor::before { content: '#####'; }
+.prose h6 .anchor::before { content: '######'; }
+
+.prose :is(h1, h2, h3, h4, h5, h6):hover .anchor,
+.prose .anchor:focus-visible {
+	opacity: 1;
+}
+
+/*  prose  */
+
+.prose > p,
+.prose li,
+.prose dd {
+	hanging-punctuation: first;
+}
+
+.prose p {
+	margin: 0 0 1.1rem;
+}
+
+.prose .lead {
+	font-size: 1.3rem;
+	line-height: 1.55;
+	color: var(--soft);
+	margin-bottom: 2rem;
+}
+
+.prose a {
+	color: inherit;
+	text-decoration: underline;
+	text-decoration-color: var(--proof);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.18em;
+}
+
+.prose a:hover {
+	background: var(--proof-wash);
+}
+
+.prose strong {
+	font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+	margin: 0 0 1.1rem;
+	padding-left: 1.4rem;
+}
+
+.prose li {
+	margin-bottom: 0.3rem;
+}
+
+.prose li::marker {
+	color: var(--proof);
+	font-size: 0.9em;
+}
+
+.prose blockquote {
+	margin: 1.5rem 0;
+	padding-left: 1.1rem;
+	border-left: 2px solid var(--rule);
+	color: var(--soft);
+	font-style: italic;
+}
+
+.prose hr {
+	height: 0;
+	margin: 2.5rem 0;
+	border: 0;
+	border-top: 1px solid var(--rule);
+}
+
+.prose img {
+	max-width: 100%;
+	height: auto;
+}
+
+.prose dl {
+	margin: 0 0 1.1rem;
+}
+
+.prose dt {
+	font-family: var(--font-mark);
+	font-size: 0.9rem;
+	font-weight: 500;
+	margin-top: 1rem;
+}
+
+.prose dd {
+	margin: 0.15rem 0 0;
+	padding-left: 1.1rem;
+	border-left: 1px solid var(--rule);
+}
+
+.prose abbr {
+	text-decoration-color: var(--soft);
+	text-underline-offset: 0.2em;
+}
+
+.prose mark {
+	background: var(--proof-wash);
+	color: inherit;
+	padding: 0 0.15em;
+}
+
+/*  code  */
+
+.prose code {
+	font-family: var(--font-mark);
+	font-size: 0.82em;
+	background: var(--code);
+	padding: 0.1em 0.35em;
+	border-radius: 3px;
+}
+
+.prose pre {
+	margin: 1.5rem 0;
+	padding: 1rem 1.1rem;
+	background: var(--code);
+	border: 1px solid var(--rule);
+	border-radius: 4px;
+	overflow-x: auto;
+	font-size: 0.95rem;
+	line-height: 1.6;
+	tab-size: 2;
+}
+
+.prose pre code {
+	background: none;
+	padding: 0;
+	font-size: 0.82rem;
+}
+
+.t-c { color: var(--soft); font-style: italic; }
+.t-s { color: color-mix(in oklab, var(--ink) 72%, var(--proof)); }
+.t-k { color: var(--ink); font-weight: 600; }
+.t-n { color: var(--soft); }
+.t-p { color: color-mix(in oklab, var(--ink) 78%, var(--proof)); }
+.t-f { color: var(--soft); font-weight: 500; }
+.t-m { color: var(--proof); }
+.t-e { color: var(--ink); font-weight: 600; }
+
+/*  tables  */
+
+.table-scroll {
+	margin: 1.5rem 0;
+	overflow-x: auto;
+}
+
+.prose table {
+	width: 100%;
+	border-collapse: collapse;
+	font-family: var(--font-mark);
+	font-size: 0.8rem;
+	line-height: 1.55;
+}
+
+.prose :is(th, td) {
+	padding: 0.55rem 0.8rem 0.55rem 0;
+	text-align: left;
+	vertical-align: baseline;
+	border-bottom: 1px solid var(--rule);
+}
+
+.prose th {
+	font-weight: 600;
+	border-bottom: 1.5px solid var(--ink);
+	white-space: nowrap;
+}
+
+.prose td code {
+	font-size: 1em;
+	background: none;
+	padding: 0;
+}
+
+/*  callouts and containers  */
+
+.prose .callout {
+	margin: 1.5rem 0;
+	padding: 0.9rem 1.1rem;
+	background: var(--raised);
+	border: 1px solid var(--rule);
+	border-left-width: 2px;
+	border-radius: 4px;
+}
+
+.prose .callout > :last-child {
+	margin-bottom: 0;
+}
+
+.prose .callout-title {
+	font-family: var(--font-mark);
+	font-size: 0.8rem;
+	font-weight: 600;
+	margin-bottom: 0.35rem;
+	color: var(--soft);
+}
+
+.prose :is(.callout-warning, .callout-caution) {
+	border-left-color: var(--flag);
+}
+
+.prose :is(.callout-warning, .callout-caution) .callout-title {
+	color: var(--flag);
+}
+
+.prose details {
+	margin: 1.5rem 0;
+	padding: 0.6rem 1.1rem;
+	border: 1px solid var(--rule);
+	border-radius: 4px;
+}
+
+.prose summary {
+	font-family: var(--font-mark);
+	font-size: 0.85rem;
+	cursor: pointer;
+}
+
+.container-title {
+	font-family: var(--font-mark);
+	font-size: 0.8rem;
+	color: var(--soft);
+}
+
+/*  sidenotes  */
+
+.sidenote-ref,
+.footnote-ref {
+	font-family: var(--font-mark);
+	font-size: 0.7em;
+	color: var(--proof);
+}
+
+.sidenote-ref a,
+.footnote-ref a {
+	text-decoration: none;
+	color: inherit;
+}
+
+.sidenote {
+	float: right;
+	clear: right;
+	width: var(--margin-note);
+	margin: 0.35rem calc(-1 * (var(--margin-note) + 2.5rem)) 1rem 0;
+	font-size: 0.88rem;
+	line-height: 1.5;
+	color: var(--soft);
+}
+
+.sidenote-number {
+	font-family: var(--font-mark);
+	font-size: 0.75rem;
+	color: var(--proof);
+}
+
+.footnotes {
+	margin-top: 3rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--rule);
+	font-size: 0.95rem;
+	color: var(--soft);
+}
+
+.prose .footnotes-heading {
+	font-size: 0.95rem;
+	margin-top: 0;
+}
+
+.footnote-backref {
+	text-decoration: none;
+}
+
+/*  home  */
+
+body.home {
+	--column: 46rem;
+}
+
+body.home .prose h1 {
+	font-size: clamp(2.2rem, 7vw, 3.1rem);
+	letter-spacing: -0.03em;
+	margin-bottom: 1rem;
+}
+
+/* the source of a thing, beside the thing. the only two-column moment on the site */
+.proof {
+	margin: 2.5rem 0;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	align-items: start;
+	gap: 0.5rem 1.25rem;
+}
+
+.proof > .container-title {
+	grid-column: 1 / -1;
+	margin: 0;
+	padding-bottom: 0.4rem;
+	border-bottom: 1px solid var(--rule);
+}
+
+.proof > pre {
+	margin: 0;
+}
+
+.proof > :not(pre):not(.container-title) {
+	margin: 0;
+}
+
+.proof :is(.callout, blockquote, table) {
+	margin: 0;
+}
+
+/*  narrow  */
+
+@media (max-width: 78rem) {
+	.sidenote {
+		float: none;
+		width: auto;
+		margin: 0.6rem 0 1rem;
+		padding-left: 0.9rem;
+		border-left: 2px solid var(--rule);
+	}
+}
+
+@media (max-width: 52rem) {
+	.proof {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* no room for a margin: the marks sit on the line they belong to */
+@media (max-width: 48rem) {
+	.prose .anchor {
+		position: static;
+		padding: 0 0.45rem 0 0;
+		font-size: inherit;
+	}
+}
+
+@media (max-width: 40rem) {
+	body {
+		font-size: 1.08rem;
+	}
+
+	.masthead {
+		padding-top: 1rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+	}
+}
+
+@media print {
+	.masthead,
+	.site-nav,
+	.skip {
+		display: none;
+	}
+
+	body {
+		background: #fff;
+		color: #000;
+	}
+
+	.sidenote {
+		float: none;
+	}
+}

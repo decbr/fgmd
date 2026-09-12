@@ -1,0 +1,4 @@
+- [Docs](/docs)
+- [Changelog](https://github.com/decbr/fgmd/releases)
+- [Issues](https://github.com/decbr/fgmd/issues)
+- [MIT licence](https://github.com/decbr/fgmd/blob/master/LICENSE)

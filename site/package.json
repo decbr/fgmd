@@ -1,0 +1,23 @@
+{
+	"name": "fgmd-site",
+	"version": "0.0.0",
+	"private": true,
+	"description": "fgmd's own site: every page is a markdown file, rendered by fgmd.",
+	"type": "module",
+	"scripts": {
+		"collect": "node scripts/collect.mjs",
+		"dev": "npm run collect && wrangler dev",
+		"deploy": "npm run collect && wrangler deploy",
+		"check": "npm run collect && tsc --noEmit",
+		"preview": "npm run collect && node scripts/preview.mjs"
+	},
+	"dependencies": {
+		"@decbr/fgmd": "file:.."
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^5.20260911.1",
+		"esbuild": "^0.28.2",
+		"typescript": "^6.0.3",
+		"wrangler": "^4.40.0"
+	}
+}
