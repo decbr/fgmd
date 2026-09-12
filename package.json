@@ -1,6 +1,6 @@
 {
 	"name": "@decbr/fgmd",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "a f***ing good markdown parser.",
 	"license": "MIT",
 	"author": "decbr",
