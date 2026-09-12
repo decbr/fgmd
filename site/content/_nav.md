@@ -2,5 +2,6 @@
 - [Syntax](/docs/syntax)
 - [Options](/docs/options)
 - [Plugins](/docs/plugins)
+- [Breaking Changes](/docs/breaking-changes)
 - [npm](https://www.npmjs.com/package/@decbr/fgmd)
 - [GitHub](https://github.com/decbr/fgmd)

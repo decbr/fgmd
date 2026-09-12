@@ -102,6 +102,7 @@ You can also draw any node your own way with a snippet. For that, and more, see 
 - [The tree](docs/tree.md): parsing to a tree, walking it and rendering it
 - [Recipes](docs/recipes.md): option sets for common sites
 - [Development](docs/development.md): tests, spec reports and regenerating data
+- [Breaking changes](docs/breaking-changes.md): what to change in your code when upgrading between versions
 
 ## License
 

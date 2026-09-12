@@ -10,5 +10,6 @@
 - [The tree](tree.md): parsing to a tree, walking it and rendering it
 - [Recipes](recipes.md): option sets for common sites
 - [Development](development.md): tests, spec reports and regenerating data
+- [Breaking changes](breaking-changes.md): what to change in your code when upgrading between versions
 
 To install and get started, see the [README](../README.md).
