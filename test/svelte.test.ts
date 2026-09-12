@@ -3,6 +3,7 @@
 // escaped), so both sides are normalised before comparing.
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
+import InlineMarkdown from '../src/svelte/InlineMarkdown.svelte';
 import Markdown from '../src/svelte/Markdown.svelte';
 import {
 	abbreviations,
@@ -216,6 +217,26 @@ describe('Svelte component matches renderHtml', () => {
 		const md = '**hi** _there_ [x](/y)';
 		expect(normalize(svelte({ source: md, inline: true }))).toBe(normalize(markdownInline(md)));
 	});
+});
+
+describe('InlineMarkdown matches markdownInline', () => {
+	const cases: [string, MarkdownOptions][] = [
+		['**hi** _there_ [x](/y) `code`', {}],
+		['a &amp; b &notin; c &notit; d \\*kept\\*', {}],
+		['~~gone~~ <https://a.b> www.c.d ![alt](i.png "t") [bad](javascript:x)', { classes: { a: 'link', img: 'pic' } }],
+		['line one  \nline two', { breaks: true }],
+		['==mark== ^sup^ :tada: $x^2$', { plugins: [typography(), emoji({ map: { tada: '🎉' } }), math()] }],
+		['a <b onclick="x()">b</b>', { html: 'sanitize' }],
+		['[ext](https://e.com) [int](/i)', { linkAttrs: (url) => (url.startsWith('/') ? null : { target: '_blank', rel: 'ugc' }) }]
+	];
+
+	for (const [md, options] of cases) {
+		it(md, () => {
+			const out = render(InlineMarkdown, { props: { source: md, ...options } }).body;
+			expect(normalize(out)).toBe(normalize(markdownInline(md, options)));
+			expect(normalize(out)).toBe(normalize(svelte({ source: md, inline: true, ...options })));
+		});
+	}
 });
 
 describe('Svelte component safety', () => {
