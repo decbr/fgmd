@@ -192,3 +192,55 @@ ${footer}<p class="source-note">This page is <a href="${escape(route === '/' ? '
 </html>
 `;
 }
+
+// the sitemap is XML, which browsers render as a tree of tags or refuse to render at all. an XSLT
+// stylesheet is the one way to give it a readable page without giving crawlers anything but the
+// XML they came for: they ignore the processing instruction, browsers follow it.
+export function sitemapStylesheet(cssHash: string): string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:s="http://www.sitemaps.org/schemas/sitemap/0.9">
+<xsl:output method="html" encoding="UTF-8" indent="yes"/>
+<xsl:template match="/">
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Every page - ${SITE.name}</title>
+<meta name="robots" content="noindex"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap"/>
+<link rel="stylesheet" href="/style.${cssHash}.css"/>
+</head>
+<body class="doc">
+<header class="masthead">
+<a class="wordmark" href="/">fgmd<span aria-hidden="true">.</span></a>
+<nav class="site-nav" aria-label="Site"><ul><li><a href="/">Home</a></li><li><a href="/docs">Docs</a></li><li><a href="/sitemap.xml">Sitemap</a></li></ul></nav>
+</header>
+<main id="content" class="prose">
+<h1 id="every-page"><a class="anchor" href="#every-page" aria-label="Link to this section: Every page">#</a>Every page</h1>
+<p class="lead"><xsl:value-of select="count(s:urlset/s:url)"/> pages, each one a markdown file. The link on the right of each row is the file itself.</p>
+<ul class="sitemap">
+<xsl:for-each select="s:urlset/s:url">
+<xsl:variable name="path" select="substring-after(s:loc, '${SITE.origin}')"/>
+<xsl:variable name="source">
+<xsl:choose>
+<xsl:when test="$path = '/'">/index.md</xsl:when>
+<xsl:otherwise><xsl:value-of select="concat($path, '.md')"/></xsl:otherwise>
+</xsl:choose>
+</xsl:variable>
+<li>
+<a class="sitemap-route" href="{$path}"><xsl:value-of select="$path"/></a>
+<a class="sitemap-source" href="{$source}"><xsl:value-of select="$source"/></a>
+</li>
+</xsl:for-each>
+</ul>
+<p>This page is <a href="/sitemap.xml">/sitemap.xml</a>, drawn by <a href="/sitemap.xsl">/sitemap.xsl</a>. A crawler reading the same URL gets the XML underneath it.</p>
+</main>
+</body>
+</html>
+</xsl:template>
+</xsl:stylesheet>
+`;
+}

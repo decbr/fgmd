@@ -4,7 +4,7 @@
 // nothing is fetched at runtime and nothing is stored - the Worker holds every page's source,
 // renders one on first request, and keeps the HTML in memory for the life of the isolate.
 import { css, cssHash, sources } from './generated/content.js';
-import { SITE, document, render, renderFragment, type Page } from './render.js';
+import { SITE, document, render, renderFragment, sitemapStylesheet, type Page } from './render.js';
 
 interface Route {
 	path: string;
@@ -69,15 +69,31 @@ function page(route: string, entry: Route): { html: string; etag: string } {
 	return built;
 }
 
-function respond(request: Request, body: string, type: string, cacheControl: string, etag: string, status = 200): Response {
+// the pages have no scripts, no inline styles and no embeds; say so
+const CSP =
+	"default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+// an XSLT stylesheet is script-like to Chromium, which checks it against script-src: under the
+// policy above the sitemap would render as bare XML. this is that policy plus same-origin XSLT,
+// and it applies to nothing but the sitemap.
+const CSP_SITEMAP = CSP.replace("default-src 'none';", "default-src 'none'; script-src 'self';");
+
+function respond(
+	request: Request,
+	body: string,
+	type: string,
+	cacheControl: string,
+	etag: string,
+	status = 200,
+	csp = CSP
+): Response {
 	const headers = new Headers({
 		'content-type': type,
 		'cache-control': cacheControl,
 		etag,
 		'x-content-type-options': 'nosniff',
 		'referrer-policy': 'strict-origin-when-cross-origin',
-		'content-security-policy':
-			"default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+		'content-security-policy': csp
 	});
 	if (status === 200 && request.headers.get('if-none-match') === etag) {
 		return new Response(null, { status: 304, headers });
@@ -96,7 +112,7 @@ function sitemap(): string {
 		.sort()
 		.map((route) => `\t<url><loc>${SITE.origin}${route}</loc></url>`)
 		.join('\n');
-	return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+	return `<?xml version="1.0" encoding="UTF-8"?>\n<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
 
 export default {
@@ -125,7 +141,11 @@ export default {
 		}
 		if (path === '/sitemap.xml') {
 			const body = sitemap();
-			return respond(request, body, 'application/xml; charset=utf-8', PAGE_CACHE, etagOf(body));
+			return respond(request, body, 'application/xml; charset=utf-8', PAGE_CACHE, etagOf(body), 200, CSP_SITEMAP);
+		}
+		if (path === '/sitemap.xsl') {
+			const body = sitemapStylesheet(cssHash);
+			return respond(request, body, 'text/xsl; charset=utf-8', PAGE_CACHE, etagOf(body), 200, CSP_SITEMAP);
 		}
 
 		// every page is served as markdown at its own URL + .md, so the claim on the home page is

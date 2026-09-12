@@ -2,9 +2,9 @@
 
 [![npm](https://img.shields.io/npm/v/@decbr/fgmd?logo=npm)](https://www.npmjs.com/package/@decbr/fgmd)
 [![tests](https://github.com/decbr/fgmd/actions/workflows/test.yml/badge.svg)](https://github.com/decbr/fgmd/actions/workflows/test.yml)
-[![docs](https://img.shields.io/badge/docs-yes-brightgreen.svg)](https://github.com/decbr/fgmd/tree/master/docs)
 [![licence](https://img.shields.io/npm/l/@decbr/fgmd)](https://github.com/decbr/fgmd/blob/master/LICENSE)
-[![site](https://img.shields.io/badge/site-view-blue.svg)](https://fgmd.dev)
+[![docs](https://img.shields.io/badge/docs-view-blue.svg)](https://github.com/decbr/fgmd/tree/master/docs)
+[![site](https://img.shields.io/badge/site-view-royalblue.svg)](https://fgmd.dev)
 
 A f***ing good Markdown parser.
 
