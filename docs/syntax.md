@@ -40,17 +40,17 @@ A `---` block at the top of a file holds a page's metadata. `frontmatter()` spli
 import { frontmatter, markdown } from '@decbr/fgmd';
 
 const { data, body } = frontmatter(source);
-// data: { title: 'Detour', blurb: 'detour blurb' }, body: the Markdown after the block
+// data: { title: 'Page Title', blurb: 'page blurb' }, body: the Markdown after the block
 markdown(body);
 ```
 
 ```md
 ---
-title: Detour
-blurb: detour blurb
+title: Page Title
+blurb: page blurb
 ---
 
-detour copy
+page copy
 ```
 
 `markdown(source, { frontmatter: true })` renders the same document with the block left out, and `parse()` puts the values on the tree as `root.data.frontmatter` (see [the tree](tree.md)). It is opt-in: without it `---` is a thematic break, which is what CommonMark says, and a `---` block followed by prose rather than `key: value` lines is never treated as metadata either.
