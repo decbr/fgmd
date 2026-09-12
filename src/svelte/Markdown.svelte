@@ -19,8 +19,9 @@
 <script lang="ts">
 	import type { Html, Node, PhrasingContent, Root } from '../ast.js';
 	import { parse } from '../block.js';
-	import { parseInline } from '../index.js';
 	import type { MarkdownOptions } from '../options.js';
+	// not from ../index.js: that entry registers every built-in plugin as it loads
+	import { parseInline } from '../parse-inline.js';
 	import {
 		anchorConfig,
 		backrefIndex,
@@ -38,10 +39,9 @@
 	import { normalizeUrl } from '../util.js';
 	import { setMarkdownContext, type NodeSnippet } from './context.js';
 	import Nodes from './Nodes.svelte';
+	import { splitProps, type NodeSnippets } from './props.js';
 
-	type Snippets = { [K in Node['type']]?: NodeSnippet<Extract<Node, { type: K }>> };
-
-	interface Props extends Omit<MarkdownOptions, 'renderers' | 'html'>, Omit<Snippets, 'html'> {
+	interface Props extends Omit<MarkdownOptions, 'renderers' | 'html'>, Omit<NodeSnippets, 'html'> {
 		// markdown to render
 		source?: string;
 		// or an already parsed tree (a Root, or phrasing content for inline use)
@@ -54,18 +54,7 @@
 
 	let { source = '', ast, inline = false, ...rest }: Props = $props();
 
-	// options that are functions, as opposed to snippets
-	const OPTION_FUNCTIONS = new Set(['urlPolicy', 'linkAttrs', 'highlight']);
-
-	const split = $derived.by(() => {
-		const options: Record<string, unknown> = {};
-		const snippets: Record<string, NodeSnippet | undefined> = {};
-		for (const [key, value] of Object.entries(rest)) {
-			if (typeof value === 'function' && !OPTION_FUNCTIONS.has(key)) snippets[key] = value as NodeSnippet;
-			else options[key] = value;
-		}
-		return { options: options as MarkdownOptions, snippets };
-	});
+	const split = $derived(splitProps(rest));
 	const options = $derived(split.options);
 
 	const tree = $derived(ast ?? (inline ? parseInline(source, options) : parse(source, options)));

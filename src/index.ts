@@ -1,8 +1,9 @@
-import type { PhrasingContent, Root } from './ast.js';
-import { BlockParser, parse } from './block.js';
+import type { Root } from './ast.js';
+import { parse } from './block.js';
 import { frontmatter } from './frontmatter.js';
 import { renderHtml } from './html.js';
-import { resolveParseOptions, type MarkdownOptions, type ParseOptions } from './options.js';
+import type { MarkdownOptions } from './options.js';
+import { parseInline } from './parse-inline.js';
 import { registerPlugin } from './plugin.js';
 import { builtinPlugins } from './plugins/index.js';
 
@@ -39,7 +40,7 @@ export type { SanitizeOptions } from './sanitize.js';
 export type { UrlKind, UrlPolicy } from './url.js';
 export type { Visitor } from './visit.js';
 
-export { frontmatter, parse, renderHtml };
+export { frontmatter, parse, parseInline, renderHtml };
 export { toString } from './inline.js';
 export { registerPlugin, resolvePlugins } from './plugin.js';
 export * from './plugins/index.js';
@@ -48,14 +49,9 @@ export { DEFAULT_SCHEMES, allowSchemes, defaultUrlPolicy } from './url.js';
 export { mapText, visit } from './visit.js';
 export { VERSION } from './version.js';
 
-// built-in plugins can be named in options: { plugins: ['callouts', ['math', {}]] }
+// built-in plugins can be named in options: { plugins: ['callouts', ['math', {}]] }. only this
+// entry registers them, so the Svelte components (which don't import it) stay free of every plugin
 for (const [name, factory] of Object.entries(builtinPlugins)) registerPlugin(name, factory);
-
-// parses a single line of inline markdown (no paragraphs, lists or headings), e.g. for a
-// title or a short description
-export function parseInline(markdown: string, options?: ParseOptions): PhrasingContent[] {
-	return new BlockParser(resolveParseOptions(options)).parseInlineContent(markdown);
-}
 
 // markdown in, HTML out
 export function markdown(source: string, options: MarkdownOptions = {}): string {

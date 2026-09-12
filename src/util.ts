@@ -1,4 +1,4 @@
-import { ENTITIES } from './entities.js';
+import { decodeNamedEntity } from '#named-entity';
 
 // the ASCII punctuation a backslash can escape
 export const ESCAPABLE = '[!"#$%&\'()*+,./:;<=>?@[\\\\\\]^_`{|}~-]';
@@ -43,8 +43,7 @@ export function decodeEntity(entity: string): string | null {
 		if (!code || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return '�';
 		return String.fromCodePoint(code);
 	}
-	const name = entity.slice(1, -1);
-	return Object.hasOwn(ENTITIES, name) ? (ENTITIES[name] ?? null) : null;
+	return decodeNamedEntity(entity.slice(1, -1));
 }
 
 const reEntity = new RegExp(ENTITY, 'gi');

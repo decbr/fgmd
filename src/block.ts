@@ -15,11 +15,11 @@ import type {
 	Root,
 	TableRow
 } from './ast.js';
+import { finishTree } from './finish.js';
 import { extractFrontmatter } from './frontmatter.js';
 import { InlineParser, toSticky, trimMd, type FootnoteLabel, type LinkDefinition } from './inline.js';
 import { resolveParseOptions, type ParseOptions, type ResolvedParseOptions } from './options.js';
 import type { ContainerRule, DefinitionRule, FenceRule, LineRule, ParseContext } from './plugin.js';
-import { sanitizeTree } from './sanitize.js';
 import { CLOSETAG, OPENTAG, normalizeLabel, stripComments, tagfilter, unescapeString } from './util.js';
 
 const CODE_INDENT = 4;
@@ -919,23 +919,7 @@ export class BlockParser {
 			root.children.unshift({ type: 'yaml', value: front.raw as string });
 			root.data = { ...root.data, frontmatter: front.data };
 		}
-		return this.finish(root);
-	}
-
-	// inline markdown only, with the same plugin transforms (and sanitising) as a document
-	parseInlineContent(text: string): PhrasingContent[] {
-		const root = this.finish({ type: 'root', children: [{ type: 'paragraph', children: this.inline.parse(text) }] });
-		const first = root.children[0];
-		return first?.type === 'paragraph' ? first.children : [];
-	}
-
-	// plugin transforms, in order, then the sanitiser last so nothing a transform makes skips it
-	private finish(root: Root): Root {
-		for (const plugin of this.options.plugins) {
-			if (plugin.transform) root = plugin.transform(root, this.context) ?? root;
-		}
-		if (this.options.sanitize) root = sanitizeTree(root, this.options.sanitize);
-		return root;
+		return finishTree(root, this.context);
 	}
 
 	// --- line bookkeeping

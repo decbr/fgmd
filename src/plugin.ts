@@ -125,7 +125,12 @@ export function resolvePlugins(inputs: readonly PluginInput[] = []): Plugin[] {
 		const [name, options] = typeof input === 'string' ? [input, undefined] : (input as [string, Record<string, unknown>?]);
 		const factory = registry.get(name);
 		if (!factory) {
-			throw new Error(`fgmd: unknown plugin "${name}" (available: ${[...registry.keys()].join(', ') || 'none'})`);
+			// the built-ins are only registered by name when '@decbr/fgmd' itself is imported, which
+			// the Svelte components deliberately don't do
+			throw new Error(
+				`fgmd: unknown plugin "${name}" (available: ${[...registry.keys()].join(', ') || 'none'}). ` +
+					`Built-in names are registered by importing '@decbr/fgmd'; otherwise pass the plugin itself, e.g. callouts().`
+			);
 		}
 		return factory(options);
 	});
