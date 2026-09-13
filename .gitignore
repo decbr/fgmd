@@ -3,3 +3,4 @@ dist
 *.tgz
 .svelte-kit
 .idea/
+/go/fgmd.js
