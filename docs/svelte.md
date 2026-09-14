@@ -28,6 +28,21 @@ Example of 'Components/Prose.svelte':
 
 `code` styles inline code only. Code blocks are styled through `pre`.
 
+Example Usage (+page.svelte):
+
+```svelte
+<script lang="ts">
+    import Prose from '$lib/components/Prose.svelte';
+    import source from '$lib/assets/myawesomemarkdownfile.md?raw';
+</script>
+
+<main>
+    <div>
+        <Prose {source} />
+    </div>
+</main>
+```
+
 ## Snippets
 
 Draw any node your own way with a snippet named after its type:
