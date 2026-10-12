@@ -9,6 +9,7 @@ import {
 	abbreviations,
 	attributes,
 	callouts,
+	components,
 	definitionLists,
 	emoji,
 	markdown,
@@ -19,6 +20,7 @@ import {
 	type MarkdownOptions,
 	type Plugin
 } from '../src/index.js';
+import Note from './fixtures/Note.svelte';
 import Snippets from './fixtures/Snippets.svelte';
 
 function normalize(html: string): string {
@@ -121,6 +123,12 @@ $$
 
 ![photo](/a.jpg "A caption")
 
+<Note kind="tip">
+Component *content*, with <Kbd>Ctrl</Kbd> inline.
+</Note>
+
+<Chart data={[1, 2]} />
+
 Footnote[^1] and side[^2].
 
 [^1]: **Title.** Body.
@@ -167,6 +175,7 @@ const plugins = [
 	math(),
 	emoji({ map: { tada: '🎉' } }),
 	wikilinks(),
+	components(),
 	keycap
 ];
 
@@ -254,6 +263,21 @@ describe('Svelte component safety', () => {
 		expect(out).toContain('<b>b</b>');
 		expect(out).not.toContain('onclick');
 		expect(out).not.toContain('script');
+	});
+});
+
+describe('Svelte components for the components plugin', () => {
+	const source = '<Note kind="tip">\n**hi**\n</Note>\n\n<Note href="javascript:x" />\n\n- <Note href="/ok">tight</Note>';
+	const out = normalize(svelte({ source, plugins: [components()], components: { Note } }));
+
+	it('draws each by name, with its props and its content', () => {
+		expect(out).toContain('<aside class="note-tip"><p><strong>hi</strong></p></aside>');
+		expect(out).toContain('<li><aside class="note-note" data-href="/ok">tight</aside></li>');
+	});
+
+	it('drops URL props the policy rejects', () => {
+		expect(out).toContain('<aside class="note-note"></aside>');
+		expect(out).not.toContain('javascript');
 	});
 });
 

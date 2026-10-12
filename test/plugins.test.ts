@@ -4,6 +4,7 @@ import {
 	abbreviations,
 	attributes,
 	callouts,
+	components,
 	definitionLists,
 	emoji,
 	mapText,
@@ -217,6 +218,94 @@ describe('wikilinks', () => {
 	});
 });
 
+describe('components', () => {
+	const tree = (md: string, options = {}) => parse(md, { plugins: [components(options)] }).children;
+
+	it('reads a block component on its own line, with string, boolean and JSON props', () => {
+		expect(tree('<Chart kind="bar" data={[3, 1, 4]} options={{"stacked": true}} legend />')).toEqual([
+			{ type: 'component', name: 'Chart', props: { kind: 'bar', data: [3, 1, 4], options: { stacked: true }, legend: true }, children: [] }
+		]);
+	});
+
+	it('holds markdown between an opening and a closing line, blank lines and all', () => {
+		expect(tree('<Tabs.Item title="One">\n## Head\n\nSome *text*.\n</Tabs.Item>\nafter')).toEqual([
+			{
+				type: 'component',
+				name: 'Tabs.Item',
+				props: { title: 'One' },
+				children: [
+					{ type: 'heading', depth: 2, children: [{ type: 'text', value: 'Head' }] },
+					{ type: 'paragraph', children: [{ type: 'text', value: 'Some ' }, { type: 'emphasis', children: [{ type: 'text', value: 'text' }] }, { type: 'text', value: '.' }] }
+				]
+			},
+			{ type: 'paragraph', children: [{ type: 'text', value: 'after' }] }
+		]);
+	});
+
+	it('closes the innermost component of the name, and leaves closers in code alone', () => {
+		const [outer] = tree('<A>\n<A>\ninner\n</A>\nouter\n</A>') as unknown as [{ children: { type: string }[] }];
+		expect(outer.children.map((c) => c.type)).toEqual(['component', 'paragraph']);
+		expect(tree('<A>\n```\n</A>\n```\n</A>')).toEqual([
+			{ type: 'component', name: 'A', props: {}, children: [{ type: 'code', lang: null, meta: null, value: '</A>\n' }] }
+		]);
+	});
+
+	it('reads inline components, pairing tags within one run of text', () => {
+		expect(tree('Press <Kbd>Ctrl</Kbd> or <Icon name="x" />')).toEqual([
+			{
+				type: 'paragraph',
+				children: [
+					{ type: 'text', value: 'Press ' },
+					{ type: 'component', name: 'Kbd', props: {}, children: [{ type: 'text', value: 'Ctrl' }] },
+					{ type: 'text', value: ' or ' },
+					{ type: 'component', name: 'Icon', props: { name: 'x' }, children: [] }
+				]
+			}
+		]);
+		expect(markdown('a <B>x <C>y</B> z <D>', { plugins: [components()] })).toBe('<p>a x &lt;C&gt;y z &lt;D&gt;</p>\n');
+	});
+
+	it('makes a paragraph that is only a component into that component', () => {
+		expect(tree('<Badge>new</Badge>')).toEqual([{ type: 'component', name: 'Badge', props: {}, children: [{ type: 'text', value: 'new' }] }]);
+		expect(markdown('- <Badge>*new*</Badge>', { plugins: [components()] })).toBe('<ul>\n<li><em>new</em></li>\n</ul>\n');
+		expect(tree('<Chart\n  kind="bar"\n/>')).toEqual([{ type: 'component', name: 'Chart', props: { kind: 'bar' }, children: [] }]);
+	});
+
+	it('keeps tags with code in their props, and lowercase tags, as they were', () => {
+		const options = { plugins: [components()] };
+		expect(markdown('<Chart data={load()} />', options)).toBe('<p>&lt;Chart data={load()} /&gt;</p>\n');
+		expect(markdown('<A {...rest} /> <B x={{a: 1}} />', options)).toBe('<p>&lt;A {...rest} /&gt; &lt;B x={{a: 1}} /&gt;</p>\n');
+		expect(markdown('<div>x</div> <https://a.b>', options)).toBe('<p>&lt;div&gt;x&lt;/div&gt; <a href="https://a.b">https://a.b</a></p>\n');
+		expect(markdown('<div>x</div>', { ...options, html: true })).toBe('<div>x</div>\n');
+	});
+
+	it('only takes allowed names', () => {
+		expect(tree('<Chart />\n\n<Other />', { allow: ['Chart'] }).map((n) => n.type)).toEqual(['component', 'paragraph']);
+		expect(tree('<Other />', { allow: (name: string) => name.startsWith('O') })[0]?.type).toBe('component');
+	});
+
+	it('renders just the content without a renderer, and uses render when given', () => {
+		expect(markdown('<Note>\n**hi**\n</Note>\n\n<Chart />', { plugins: [components()] })).toBe('<p><strong>hi</strong></p>\n');
+		const render = {
+			Note: (props: Record<string, unknown>, ctx: { children(): string }) => `<aside data-kind="${props.kind}">\n${ctx.children()}</aside>\n`
+		};
+		expect(markdown('<Note kind="tip">\nhi\n</Note>', { plugins: [components({ render })] })).toBe('<aside data-kind="tip">\n<p>hi</p>\n</aside>\n');
+	});
+
+	it('puts URL props through the url policy', () => {
+		const seen: unknown[] = [];
+		const render = { Link: (props: Record<string, unknown>) => (seen.push(props), '') };
+		markdown('<Link href="javascript:alert(1)" label="x" />\n\n<Link href="/ok" />', { plugins: [components({ render })] });
+		expect(seen).toEqual([{ label: 'x' }, { href: '/ok' }]);
+	});
+
+	it('never lets a prop reach the prototype', () => {
+		const [node] = tree('<A __proto__={{"polluted": true}} />') as unknown as [{ props: Record<string, unknown> }];
+		expect(Object.getPrototypeOf(node.props)).toBe(Object.prototype);
+		expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+	});
+});
+
 describe('plugins by name', () => {
 	it('resolves built-in names, with options', () => {
 		expect(markdown('==x==', { plugins: ['typography'] })).toBe('<p><mark>x</mark></p>\n');
@@ -302,5 +391,25 @@ describe('writing a plugin', () => {
 			]
 		};
 		expect(markdown('Press ||Ctrl||', { plugins: [keycap] })).toBe('<p>Press <kbd>Ctrl</kbd></p>\n');
+	});
+
+	it('runs wrapper rules, closing the innermost wrapper a line fits', () => {
+		const box: Plugin = {
+			name: 'box',
+			block: [
+				{
+					kind: 'wrapper',
+					chars: '@',
+					open: (line) => (line === '@box' ? {} : null),
+					close: (line) => line === '@end',
+					node: (children) => ({ type: 'container', name: 'box', title: null, collapsible: null, children })
+				}
+			]
+		};
+		expect(markdown('@box\n# hi\n\n@box\ninner\n@end\n@end\nafter', { plugins: [box] })).toBe(
+			'<div class="box">\n<h1>hi</h1>\n<div class="box">\n<p>inner</p>\n</div>\n</div>\n<p>after</p>\n'
+		);
+		// an opening line doesn't cut a paragraph short, and an unclosed wrapper runs to the end
+		expect(markdown('text\n@box\n\n@box\nopen', { plugins: [box] })).toBe('<p>text\n@box</p>\n<div class="box">\n<p>open</p>\n</div>\n');
 	});
 });
