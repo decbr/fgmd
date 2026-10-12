@@ -4,3 +4,4 @@ dist
 .svelte-kit
 .idea/
 /go/fgmd.js
+notes/

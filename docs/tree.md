@@ -15,9 +15,10 @@ A tree can also go straight to the Svelte component as `<Markdown ast={tree} />`
 Nodes follow mdast's names and fields:
 - **Block nodes:** `paragraph`, `heading{depth}`, `blockquote`, `list{ordered,start,spread}`, `listItem{checked}`, `code{lang,meta,value}`, `table{align}`, `tableRow`, `tableCell`, `thematicBreak`, `html`, `footnoteDefinition`, `yaml{value}`.
 - **Inline nodes:** `text`, `emphasis`, `strong`, `delete`, `inlineCode`, `break`, `link{url,title}`, `image{url,alt,title}`, `footnoteReference`.
-- **From plugins and sanitising:** `container`, `math`, `inlineMath`, `mark`, `superscript`, `subscript`, `abbr`, `definitionList`/`definitionTerm`/`definitionDescription`, `element{tagName,properties}`, `component{name,props}`.
+- **From plugins and sanitising:** `container`, `math`, `inlineMath`, `mark`, `superscript`, `subscript`, `abbr`, `definitionList`/`definitionTerm`/`definitionDescription`, `element{tagName,properties}`.
+- **From the [components plugin](components.md):** `component{name,props}`.
 
-A `component` holds blocks when it came from its own lines, and inline content when it sat in a line of text. Its `props` are plain JSON.
+A `component` holds blocks when it came from its own lines, and inline content when it sat in a line of text. Its `props` are plain JSON. It isn't in the `BlockContent` or `PhrasingContent` types, so a `switch` over every node type needs no case for it, and checking `node.type === 'component'` doesn't narrow. Use `asComponent(node)`, which returns the `Component` or `null`.
 
 With `{ frontmatter: true }`, the `---` block becomes a `yaml` node at the top of the tree, holding the text between the fences, and its parsed keys and values sit on the root as `root.data.frontmatter`. Neither renderer draws the node; a `renderers.yaml` or a `yaml` snippet can, to show the metadata. To read a block without parsing the Markdown, use `frontmatter(source)` (see [Syntax](syntax.md#frontmatter)).
 

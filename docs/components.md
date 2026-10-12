@@ -53,7 +53,7 @@ markdown(source, {
 
 A component without a function renders only its content, and a self-closing one renders nothing. That way a page never loses text because a component is missing.
 
-In the [tree](tree.md), each one is a `component` node, `{ type: 'component', name, props, children }`, which you can walk, cache, or send as JSON like any other node.
+In the [tree](tree.md), each one is a `component` node, `{ type: 'component', name, props, children }`, which you can walk, cache, or send as JSON like any other node. It isn't part of the `BlockContent` and `PhrasingContent` types, so code that handles every node type doesn't need a case for it. To read one, use `asComponent(node)`, which returns the component or `null`.
 
 `allow` limits which names count: `components({ allow: ['Chart', 'Kbd'] })`, or a function. A tag whose name isn't allowed stays as text.
 
