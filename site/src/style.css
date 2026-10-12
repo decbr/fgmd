@@ -14,7 +14,7 @@
 
 	/* --column is the measure: how wide a line of text is allowed to get. --wide is the frame a
 	 * doc page draws that measure inside, and the width the things that cannot wrap get instead. */
-	--column: 40rem;
+	--column: 46rem;
 	--gutter: 1.5rem;
 	--measure: calc(var(--column) - var(--gutter) * 2);
 	--wide: 66rem;
@@ -539,10 +539,6 @@ main {
 
 .sitemap-source:hover {
 	color: var(--ink);
-}
-
-body.home {
-	--column: 46rem;
 }
 
 body.home .prose h1 {
