@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { gemoji } from '../src/emoji.js';
 import {
 	abbreviations,
+	asComponent,
 	attributes,
 	callouts,
 	components,
@@ -13,6 +14,7 @@ import {
 	parse,
 	typography,
 	wikilinks,
+	type BlockContent,
 	type Plugin
 } from '../src/index.js';
 
@@ -290,6 +292,27 @@ describe('components', () => {
 			Note: (props: Record<string, unknown>, ctx: { children(): string }) => `<aside data-kind="${props.kind}">\n${ctx.children()}</aside>\n`
 		};
 		expect(markdown('<Note kind="tip">\nhi\n</Note>', { plugins: [components({ render })] })).toBe('<aside data-kind="tip">\n<p>hi</p>\n</aside>\n');
+	});
+
+	it('reaches component nodes through asComponent, outside the content maps', () => {
+		const [chart, para] = tree('<Chart kind="bar" />\n\ntext');
+		expect(asComponent(chart as BlockContent)?.props).toEqual({ kind: 'bar' });
+		expect(asComponent(para as BlockContent)).toBeNull();
+		// a switch over every built-in block type still compiles: the plugin adds no case to handle.
+		// npm run check fails here if component ever joins the content maps
+		const kind = (node: BlockContent): string => {
+			switch (node.type) {
+				case 'paragraph': case 'heading': case 'thematicBreak': case 'blockquote': case 'list': case 'code':
+				case 'html': case 'table': case 'footnoteDefinition': case 'yaml': case 'container': case 'math':
+				case 'definitionList': case 'element':
+					return node.type;
+				default: {
+					const unreachable: never = node;
+					return unreachable;
+				}
+			}
+		};
+		expect(kind(para as BlockContent)).toBe('paragraph');
 	});
 
 	it('puts URL props through the url policy', () => {
