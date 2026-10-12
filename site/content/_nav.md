@@ -3,5 +3,6 @@
 - [Options](/docs/options)
 - [Plugins](/docs/plugins)
 - [Breaking Changes](/docs/breaking-changes)
+- [Changelog](/docs/changelog)
 - [npm](https://www.npmjs.com/package/@decbr/fgmd)
 - [GitHub](https://github.com/decbr/fgmd)

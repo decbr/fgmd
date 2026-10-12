@@ -13,5 +13,6 @@
 - [Development](development.md): tests, spec reports and regenerating data
 - [Benchmarks](benchmarks.md): fgmd against other JavaScript parsers, slow cases included
 - [Breaking changes](breaking-changes.md): what to change in your code when upgrading between versions
+- [Changelog](changelog.md): what each version added, changed and fixed
 
 To install and get started, see the [README](../README.md).
