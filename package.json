@@ -61,6 +61,7 @@
 	"scripts": {
 		"build": "node scripts/build.mjs",
 		"test": "vitest run",
+		"test:jitless": "vitest run test/pathological.test.ts --pool=forks --execArgv=--jitless",
 		"check": "tsc --noEmit && svelte-check --tsconfig ./tsconfig.json --threshold error",
 		"size": "node scripts/size.mjs",
 		"spec": "node scripts/spec-report.mjs",

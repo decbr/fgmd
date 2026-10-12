@@ -23,4 +23,5 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
+      - run: npm run test:jitless
       - run: npm run build
