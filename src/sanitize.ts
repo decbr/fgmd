@@ -200,6 +200,11 @@ function foldList(nodes: Node[], config: SanitizeConfig, block: boolean): Node[]
 	let dropping = 0;
 
 	const target = (): Node[] => (elements.length > 0 ? ((elements[elements.length - 1] as Element).children as Node[]) : out);
+	const add = (node: Node) => {
+		target().push(node);
+		const end = node.position?.end;
+		if (end) for (const element of elements) if (element.position) element.position.end = end;
+	};
 	const push = (frame: Frame) => {
 		stack.push(frame);
 		if (frame.element) elements.push(frame.element);
@@ -217,7 +222,7 @@ function foldList(nodes: Node[], config: SanitizeConfig, block: boolean): Node[]
 		if (node.type !== 'html') {
 			if (dropping > 0) continue;
 			foldChildren(node, config);
-			target().push(node);
+			add(node);
 			continue;
 		}
 
@@ -238,9 +243,10 @@ function foldList(nodes: Node[], config: SanitizeConfig, block: boolean): Node[]
 						type: 'element',
 						tagName: token.name,
 						properties: filterAttributes(token.name, token.attributes, config),
-						children: []
+						children: [],
+						...(node.position && { position: { ...node.position } })
 					};
-					target().push(element);
+					add(element);
 					if (!isVoid && !VOID_ELEMENTS.has(token.name)) push({ name: token.name, element, drop: false });
 				} else if (!isVoid) {
 					// not allowed (or too deep): the tag goes, what's inside it stays
@@ -251,6 +257,8 @@ function foldList(nodes: Node[], config: SanitizeConfig, block: boolean): Node[]
 				// a close tag with nothing to close is ignored
 				for (let i = stack.length - 1; i >= 0; i--) {
 					if ((stack[i] as Frame).name === token.name) {
+						const closed = (stack[i] as Frame).element;
+						if (closed?.position && node.position) closed.position.end = node.position.end;
 						popTo(i);
 						break;
 					}

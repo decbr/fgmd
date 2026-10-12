@@ -257,11 +257,14 @@ function foldList(nodes: Node[]): Node[] {
 		const frame = open[i] as { marker: Marker; index: number };
 		for (const dropped of open.splice(i)) counts.set(dropped.marker.name, (counts.get(dropped.marker.name) as number) - 1);
 		const children = out.splice(frame.index + 1);
+		const start = (frame.marker as unknown as Node).position?.start;
+		const end = node.position?.end;
 		out[frame.index] = inline({
 			type: 'component',
 			name: frame.marker.name,
 			props: frame.marker.props,
-			children: toText(children) as PhrasingContent[]
+			children: toText(children) as PhrasingContent[],
+			...(start && end && { position: { start, end } })
 		});
 	}
 	return toText(out);
@@ -273,10 +276,12 @@ function toText(nodes: Node[]): Node[] {
 	for (const node of nodes) {
 		const value = isMarker(node) ? (node as unknown as Marker).raw : node.type === 'text' ? node.value : null;
 		const last = out[out.length - 1];
+		const start = last?.position?.start;
+		const end = node.position?.end;
 		if (value !== null && last?.type === 'text') {
-			out[out.length - 1] = { type: 'text', value: last.value + value };
+			out[out.length - 1] = { type: 'text', value: last.value + value, ...(start && end && { position: { start, end } }) };
 		} else {
-			out.push(value !== null && isMarker(node) ? { type: 'text', value } : node);
+			out.push(value !== null && isMarker(node) ? { type: 'text', value, ...(node.position && { position: node.position }) } : node);
 		}
 	}
 	return out;

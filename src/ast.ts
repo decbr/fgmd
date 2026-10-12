@@ -1,6 +1,6 @@
 // the tree parse() returns. node and field names follow mdast (https://github.com/syntax-tree/mdast)
-// so the output is familiar and can be handed to mdast tooling, with two simplifications:
-// reference links arrive already resolved as link/image nodes, and there are no position fields.
+// so the output is familiar and can be handed to mdast tooling, with one simplification:
+// reference links arrive already resolved as link/image nodes. positions come with { positions: true }.
 // soft line breaks stay inside text values as '\n', same as mdast.
 //
 // plugins add node types by augmenting the content maps, the same way mdast does:
@@ -22,8 +22,20 @@ export interface Data {
 	[key: string]: unknown;
 }
 
+export interface Point {
+	line: number;
+	column: number;
+	offset: number;
+}
+
+export interface Position {
+	start: Point;
+	end: Point;
+}
+
 export interface NodeBase {
 	data?: Data;
+	position?: Position;
 }
 
 export type AlignType = 'left' | 'right' | 'center' | null;

@@ -89,7 +89,8 @@ export function callouts(options: CalloutOptions = {}): Plugin {
 			name,
 			title: title.length > 0 ? title : null,
 			collapsible: m[2] === '-' ? 'closed' : m[2] === '+' ? 'open' : null,
-			children: body.length > 0 ? [{ ...first, children: body }, ...quote.children.slice(1)] : quote.children.slice(1)
+			children: body.length > 0 ? [{ ...first, children: body }, ...quote.children.slice(1)] : quote.children.slice(1),
+			...(quote.position && { position: quote.position })
 		});
 	};
 

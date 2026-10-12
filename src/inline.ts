@@ -3,7 +3,7 @@
 // links) following commonmark.js, extended with GFM strikethrough, footnote references and
 // bare-URL autolinks, plus plugin rules: new syntax at trigger characters, and new delimiter
 // runs (like ==mark==) that go through the same algorithm as *emphasis*.
-import type { Node, PhrasingContent } from './ast.js';
+import type { Node, PhrasingContent, Position } from './ast.js';
 import type { ResolvedParseOptions } from './options.js';
 import type { InlineRule, InlineState, ParseContext } from './plugin.js';
 import {
@@ -100,6 +100,8 @@ class Inl {
 	payload: PhrasingContent | null = null;
 	// made by the delimiter algorithm (emphasis, strong, delete, mark...): becomes { type, children }
 	wrapper = false;
+	start = -1;
+	end = -1;
 
 	constructor(
 		public type: string,
@@ -221,6 +223,7 @@ export function trimMd(s: string): string {
 export class InlineParser {
 	private subject = '';
 	private pos = 0;
+	private span: ((from: number, to: number) => Position) | null = null;
 	private delimiters: Delimiter | null = null;
 	private brackets: Bracket | null = null;
 	private tickRuns: Map<number, number[]> | null = null;
@@ -321,9 +324,11 @@ export class InlineParser {
 	}
 
 	// parses one block's text into phrasing content
-	parse(content: string): PhrasingContent[] {
+	parse(content: string, span: ((from: number, to: number) => Position) | null = null): PhrasingContent[] {
 		const root = new Inl('root');
 		this.subject = trimMd(content);
+		const lead = content.length - content.replace(/^[ \t\n]+/, '').length;
+		this.span = span && ((from, to) => span(from + lead, to + lead));
 		this.pos = 0;
 		this.delimiters = null;
 		this.brackets = null;
@@ -355,6 +360,19 @@ export class InlineParser {
 	private parseInline(block: Inl): boolean {
 		const c = this.peek();
 		if (c === -1) return false;
+		if (!this.span) return this.step(c, block);
+		const before = block.last;
+		const start = this.pos;
+		this.step(c, block);
+		for (let n = before ? before.next : block.first; n; n = n.next) {
+			if (n.end >= 0) continue;
+			n.start = start;
+			n.end = this.pos;
+		}
+		return true;
+	}
+
+	private step(c: number, block: Inl): boolean {
 		const rules = this.rules.get(c);
 		if (rules !== undefined && this.tryRules(rules, block)) return true;
 		let res = false;
@@ -477,7 +495,10 @@ export class InlineParser {
 		}
 		const node = new Inl('link');
 		node.url = url;
-		node.append(text(dest));
+		const label = text(dest);
+		label.start = this.pos - m.length + 1;
+		label.end = this.pos - 1;
+		node.append(label);
 		block.append(node);
 		return true;
 	}
@@ -585,7 +606,7 @@ export class InlineParser {
 	}
 
 	// wraps the nodes strictly between two delimiter nodes into a new parent
-	private static wrapBetween(type: string, opener: Inl, closer: Inl): void {
+	private static wrapBetween(type: string, opener: Inl, closer: Inl): Inl {
 		const wrapper = new Inl(type);
 		wrapper.wrapper = true;
 		let tmp = opener.next;
@@ -595,6 +616,7 @@ export class InlineParser {
 			tmp = next;
 		}
 		opener.insertAfter(wrapper);
+		return wrapper;
 	}
 
 	private processEmphasis(stackBottom: Delimiter | null): void {
@@ -645,7 +667,9 @@ export class InlineParser {
 
 			if (found && opener) {
 				if (exact) {
-					InlineParser.wrapBetween(exact.get(closer.numdelims) as string, opener.node, closer.node);
+					const wrapper = InlineParser.wrapBetween(exact.get(closer.numdelims) as string, opener.node, closer.node);
+					wrapper.start = opener.node.start;
+					wrapper.end = closer.node.end;
 					InlineParser.removeDelimitersBetween(opener, closer);
 					opener.node.unlink();
 					this.removeDelimiter(opener);
@@ -662,7 +686,11 @@ export class InlineParser {
 					openerInl.literal = openerInl.literal.slice(0, openerInl.literal.length - use);
 					closerInl.literal = closerInl.literal.slice(0, closerInl.literal.length - use);
 
-					InlineParser.wrapBetween(use === 1 ? 'emphasis' : 'strong', openerInl, closerInl);
+					const wrapper = InlineParser.wrapBetween(use === 1 ? 'emphasis' : 'strong', openerInl, closerInl);
+					openerInl.end -= use;
+					closerInl.start += use;
+					wrapper.start = openerInl.end;
+					wrapper.end = closerInl.start;
 					InlineParser.removeDelimitersBetween(opener, closer);
 
 					if (opener.numdelims === 0) {
@@ -855,6 +883,8 @@ export class InlineParser {
 		const node = new Inl(isImage ? 'image' : 'link');
 		node.url = dest ?? '';
 		node.title = title || null;
+		node.start = opener.node.start;
+		node.end = this.pos;
 		let tmp = opener.node.next;
 		while (tmp) {
 			const next: Inl | null = tmp.next;
@@ -899,14 +929,18 @@ export class InlineParser {
 	private parseNewline(block: Inl): boolean {
 		this.pos += 1;
 		const last = block.last;
+		let lineBreak = new Inl('softbreak');
+		lineBreak.start = this.pos - 1;
 		if (last && last.type === 'text' && last.literal.endsWith(' ')) {
-			const hard = last.literal[last.literal.length - 2] === ' ';
+			const length = last.literal.length;
+			if (last.literal[length - 2] === ' ') lineBreak = new Inl('break');
 			last.literal = last.literal.replace(reFinalSpace, '');
-			block.append(new Inl(hard ? 'break' : 'softbreak'));
-		} else {
-			block.append(new Inl('softbreak'));
+			last.end -= length - last.literal.length;
+			lineBreak.start = last.end;
 		}
+		block.append(lineBreak);
 		this.match(reInitialSpace);
+		lineBreak.end = this.pos;
 		return true;
 	}
 
@@ -963,64 +997,98 @@ export class InlineParser {
 		if (depth > MAX_INLINE_NESTING) return [{ type: 'text', value: flatText(parent) }];
 		const out: PhrasingContent[] = [];
 		let buffer = '';
+		let runs: number[] = [];
 		const flush = () => {
 			if (!buffer) return;
-			if (this.options.gfm.autolinks && !inLink) out.push(...autolinkLiterals(buffer));
-			else out.push({ type: 'text', value: buffer });
+			const pieces: PhrasingContent[] =
+				this.options.gfm.autolinks && !inLink ? autolinkLiterals(buffer) : [{ type: 'text', value: buffer }];
+			if (this.span) this.placePieces(pieces, [...runs, buffer.length]);
+			out.push(...pieces);
 			buffer = '';
+			runs = [];
 		};
 
 		for (let node = parent.first; node; node = node.next) {
 			switch (node.type) {
 				case 'text':
-					buffer += node.literal;
-					break;
 				case 'softbreak':
-					buffer += '\n';
+					if (this.span) runs.push(buffer.length, node.start, node.end);
+					buffer += node.type === 'text' ? node.literal : '\n';
 					break;
 				case 'break':
 					flush();
-					out.push({ type: 'break' });
+					out.push(this.at({ type: 'break' }, node));
 					break;
-				case 'node':
+				case 'node': {
 					flush();
-					out.push(node.payload as PhrasingContent);
+					const payload = node.payload as PhrasingContent;
+					out.push(payload.position ? payload : this.at(payload, node));
 					break;
+				}
 				case 'inlineCode':
 					flush();
-					out.push({ type: 'inlineCode', value: node.literal });
+					out.push(this.at({ type: 'inlineCode', value: node.literal }, node));
 					break;
 				case 'html':
 					flush();
-					out.push({ type: 'html', value: node.literal });
+					out.push(this.at({ type: 'html', value: node.literal }, node));
 					break;
 				case 'link':
 					flush();
-					out.push({ type: 'link', url: node.url, title: node.title, children: this.convert(node, true, depth + 1) });
+					out.push(
+						this.at({ type: 'link', url: node.url, title: node.title, children: this.convert(node, true, depth + 1) }, node)
+					);
 					break;
 				case 'image':
 					flush();
-					out.push({
-						type: 'image',
-						url: node.url,
-						title: node.title,
-						alt: toString(this.convert(node, true, depth + 1))
-					});
+					out.push(
+						this.at(
+							{ type: 'image', url: node.url, title: node.title, alt: toString(this.convert(node, true, depth + 1)) },
+							node
+						)
+					);
 					break;
 				case 'footnoteReference':
 					flush();
-					out.push({ type: 'footnoteReference', identifier: node.identifier, label: node.label });
+					out.push(this.at({ type: 'footnoteReference', identifier: node.identifier, label: node.label }, node));
 					break;
 				default:
 					// emphasis, strong, delete, and plugin delimiter wrappers like mark
 					if (node.wrapper) {
 						flush();
-						out.push({ type: node.type, children: this.convert(node, inLink, depth + 1) } as PhrasingContent);
+						out.push(this.at({ type: node.type, children: this.convert(node, inLink, depth + 1) } as PhrasingContent, node));
 					}
 			}
 		}
 		flush();
 		return out;
+	}
+
+	private at<T extends PhrasingContent>(node: T, from: Inl): T {
+		if (this.span && from.end >= 0) node.position = this.span(from.start, from.end);
+		return node;
+	}
+
+	private placePieces(pieces: PhrasingContent[], runs: number[]): void {
+		const span = this.span as (from: number, to: number) => Position;
+		let run = 0;
+		const subjectAt = (index: number, isEnd: boolean): number => {
+			while (run + 4 < runs.length && (runs[run + 3] as number) <= (isEnd ? index - 1 : index)) run += 3;
+			const bufferIndex = runs[run] as number;
+			const start = runs[run + 1] as number;
+			const end = runs[run + 2] as number;
+			const length = (runs[run + 3] as number) - bufferIndex;
+			if (end - start === length) return start + index - bufferIndex;
+			return index === bufferIndex ? start : end;
+		};
+		let index = 0;
+		for (const piece of pieces) {
+			const length = toString([piece]).length;
+			const position = span(subjectAt(index, false), subjectAt(index + length, true));
+			piece.position = position;
+			if (piece.type === 'link') for (const child of piece.children) child.position = position;
+			index += length;
+		}
 	}
 }
 

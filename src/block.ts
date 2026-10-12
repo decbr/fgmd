@@ -5,6 +5,7 @@
 // block rules (raw fences, markdown containers, wrappers, single lines).
 import type {
 	AlignType,
+	Position,
 	BlockContent,
 	Container,
 	DefinitionDescription,
@@ -19,6 +20,7 @@ import { finishTree } from './finish.js';
 import { extractFrontmatter } from './frontmatter.js';
 import { InlineParser, toSticky, trimMd, type FootnoteLabel, type LinkDefinition } from './inline.js';
 import { resolveParseOptions, type ParseOptions, type ResolvedParseOptions } from './options.js';
+import { Locator, segmentMap } from './position.js';
 import type { ContainerRule, DefinitionRule, FenceRule, LineRule, ParseContext, WrapperRule } from './plugin.js';
 import { CLOSETAG, OPENTAG, normalizeLabel, stripComments, tagfilter, unescapeString } from './util.js';
 
@@ -92,6 +94,8 @@ interface ListData {
 	markerOffset: number;
 }
 
+const NONE: never[] = [];
+
 class Block {
 	parent: Block | null = null;
 	children: Block[] = [];
@@ -115,6 +119,12 @@ class Block {
 	checked: boolean | null = null;
 	align: AlignType[] = [];
 	rows: string[][] = [];
+	rowSegments: number[][][] = NONE;
+	rowLines: number[] = NONE;
+	rowStarts: number[] = NONE;
+	start = -1;
+	segments: number[] = NONE;
+	base = 0;
 	label = '';
 	inlines: PhrasingContent[] = [];
 	cells: PhrasingContent[][][] = [];
@@ -174,26 +184,36 @@ function countRun(s: string, ch: string): number {
 }
 
 // splits a table row into cells. a backslash-escaped pipe stays in the cell as a plain pipe.
-function splitRow(line: string): string[] {
-	let row = line.trim();
-	if (row.startsWith('|')) row = row.slice(1);
-	if (row.endsWith('|') && !row.endsWith('\\|')) row = row.slice(0, -1);
+function splitRow(line: string, segments?: number[][], at = 0): string[] {
+	const trimmed = line.trim();
+	let from = line.length - line.trimStart().length;
+	let to = from + trimmed.length;
+	if (line[from] === '|') from++;
+	if (to > from && line[to - 1] === '|' && !(to - 2 >= from && line[to - 2] === '\\')) to--;
 
 	const cells: string[] = [];
 	let cell = '';
-	for (let i = 0; i < row.length; i++) {
-		const ch = row[i];
-		if (ch === '\\' && row[i + 1] === '|') {
+	let cellSegments = [0, at + from];
+	const push = () => {
+		const lead = cell.length - cell.trimStart().length;
+		cells.push(cell.trim());
+		segments?.push(cellSegments.map((n, i) => (i % 2 === 0 ? n - lead : n)));
+	};
+	for (let i = from; i < to; i++) {
+		const ch = line[i];
+		if (ch === '\\' && i + 1 < to && line[i + 1] === '|') {
+			cellSegments.push(cell.length, at + i + 1);
 			cell += '|';
 			i++;
 		} else if (ch === '|') {
-			cells.push(cell.trim());
+			push();
 			cell = '';
+			cellSegments = [0, at + i + 1];
 		} else {
 			cell += ch;
 		}
 	}
-	cells.push(cell.trim());
+	push();
 	return cells;
 }
 
@@ -498,6 +518,7 @@ const specs: Record<BlockType, BlockSpec> = {
 				// line is ordinary text
 				block.type = 'paragraph';
 				block.content = trimMd(stripped) + '\n';
+				block.segments = NONE;
 			} else {
 				block.content = stripped;
 			}
@@ -584,6 +605,7 @@ const startsBefore: BlockStart[] = [
 		parser.closeUnmatchedBlocks();
 		const heading = parser.addChild('heading');
 		heading.level = match[0].trim().length;
+		if (parser.locator) heading.segments = [0, parser.sourceOffset(parser.offset)];
 		// drop a closing run of #s
 		heading.content = parser.line
 			.slice(parser.offset)
@@ -628,6 +650,7 @@ const startsAfter: BlockStart[] = [
 			) {
 				parser.closeUnmatchedBlocks();
 				// no offset adjustment: leading spaces are part of the HTML
+				parser.blockStart = parser.offset;
 				const block = parser.addChild('htmlBlock');
 				block.htmlType = type;
 				return 2;
@@ -644,7 +667,11 @@ const startsAfter: BlockStart[] = [
 
 		const lines = container.content.slice(0, -1).split('\n');
 		const headerLine = lines[lines.length - 1] as string;
-		const header = splitRow(headerLine);
+		const headerAt = container.content.length - 1 - headerLine.length;
+		const headerSegments: number[][] = [];
+		const header = parser.locator
+			? splitRow(headerLine, headerSegments, parser.toSource(container, headerAt))
+			: splitRow(headerLine);
 		const delimiters = splitRow(delimiterRow);
 		if (header.length !== delimiters.length) return 0;
 
@@ -652,6 +679,12 @@ const startsAfter: BlockStart[] = [
 		const table = new Block('table', parser.lineNumber - 1);
 		table.align = delimiters.map(parseAlign);
 		table.rows = [header];
+		if (parser.locator) {
+			table.rowSegments = [headerSegments];
+			table.rowLines = [parser.lineNumber - 1];
+			table.start = parser.toSource(container, headerAt);
+			table.rowStarts = [table.start];
+		}
 
 		if (lines.length > 1) {
 			container.content = lines.slice(0, -1).join('\n') + '\n';
@@ -672,11 +705,14 @@ const startsAfter: BlockStart[] = [
 		const match = reSetextHeadingLine.exec(parser.line.slice(parser.nextNonspace));
 		if (!match) return 0;
 		parser.closeUnmatchedBlocks();
-		container.content = parser.consumeDefinitions(container.content);
+		parser.dropDefinitions(container);
 		if (container.content.length === 0) return 0;
 		const heading = new Block('heading', container.startLine);
 		heading.level = match[0][0] === '=' ? 1 : 2;
 		heading.content = container.content;
+		heading.segments = container.segments;
+		heading.base = container.base;
+		heading.start = parser.toSource(container, 0);
 		container.replaceWith(heading);
 		parser.tip = heading;
 		parser.advanceOffset(parser.line.length - parser.offset, false);
@@ -767,6 +803,7 @@ const startsAfter: BlockStart[] = [
 	(parser) => {
 		if (!parser.options.indentedCode) return 0;
 		if (!parser.indented || parser.tip.type === 'paragraph' || parser.blank) return 0;
+		parser.blockStart = parser.offset;
 		parser.advanceOffset(CODE_INDENT, true);
 		parser.closeUnmatchedBlocks();
 		parser.addChild('codeBlock');
@@ -831,6 +868,10 @@ function containerStart(rule: ContainerRule): BlockStart {
 		block.containerName = opening[1] as string;
 		block.containerTitle = opening[2] ?? '';
 		block.containerRule = rule;
+		if (opening[2] && parser.locator) {
+			const title = parser.nextNonspace + run + opening[0].indexOf(opening[2], (opening[1] as string).length);
+			block.segments = [0, parser.sourceOffset(title)];
+		}
 		parser.advanceOffset(parser.line.length - parser.offset, false);
 		return 2;
 	};
@@ -901,6 +942,9 @@ export class BlockParser {
 	blank = false;
 	partiallyConsumedTab = false;
 	allClosed = true;
+	blockStart = 0;
+	locator: Locator | null = null;
+	private lineBase = 0;
 
 	constructor(readonly options: ResolvedParseOptions) {
 		this.context = {
@@ -940,8 +984,13 @@ export class BlockParser {
 	}
 
 	parse(input: string): Root {
+		const source = input;
 		const front = this.options.frontmatter ? extractFrontmatter(input) : null;
 		if (front) input = front.body;
+		if (this.options.positions) {
+			this.locator = new Locator(source);
+			this.lineBase = this.locator.point(source.length - input.length).line - 1;
+		}
 		const lines = input.split(reLineEnding);
 		let length = lines.length;
 		// a final newline doesn't make one more (blank) line
@@ -954,6 +1003,11 @@ export class BlockParser {
 		if (front) {
 			root.children.unshift({ type: 'yaml', value: front.raw as string });
 			root.data = { ...root.data, frontmatter: front.data };
+		}
+		if (this.locator) {
+			const yaml = root.children[0];
+			if (front && yaml) yaml.position = this.locator.position(0, this.locator.lineEnd(this.lineBase));
+			root.position = this.locator.position(0, source.length);
 		}
 		return finishTree(root, this.context);
 	}
@@ -1031,18 +1085,39 @@ export class BlockParser {
 	// --- tree building
 
 	addLine(): void {
+		const tip = this.tip;
 		if (this.partiallyConsumedTab) {
 			this.offset += 1;
 			const charsToTab = 4 - (this.column % 4);
-			this.tip.content += ' '.repeat(charsToTab);
+			if (this.locator) tip.segments.push(tip.content.length + tip.base, this.sourceOffset(this.offset - 1));
+			tip.content += ' '.repeat(charsToTab);
 		}
-		this.tip.content += this.line.slice(this.offset) + '\n';
+		if (this.locator) tip.segments.push(tip.content.length + tip.base, this.sourceOffset(this.offset));
+		tip.content += this.line.slice(this.offset) + '\n';
+	}
+
+	sourceOffset(index: number): number {
+		return this.locator ? this.locator.lineStart(this.lineNumber + this.lineBase) + index : 0;
+	}
+
+	toSource(block: Block, index: number): number {
+		return block.segments.length > 0 ? segmentMap(block.segments, block.base)(index) : -1;
+	}
+
+	dropDefinitions(block: Block): void {
+		const before = block.content.length;
+		block.content = this.consumeDefinitions(block.content);
+		block.base += before - block.content.length;
 	}
 
 	// adds a child to the tip, first closing whatever can't contain it
 	addChild(type: BlockType): Block {
 		while (!specs[this.tip.type].canContain(type)) this.finalize(this.tip, this.lineNumber - 1);
 		const block = new Block(type, this.lineNumber);
+		if (this.locator) {
+			block.start = this.sourceOffset(this.blockStart);
+			block.segments = [];
+		}
 		this.tip.append(block);
 		this.tip = block;
 		return block;
@@ -1069,13 +1144,19 @@ export class BlockParser {
 	// turns a paragraph's lines into the terms of a new, open definition list in its place
 	termsToList(paragraph: Block): Block {
 		const list = new Block('definitionList', paragraph.startLine);
+		list.start = paragraph.start;
 		paragraph.replaceWith(list);
+		let at = 0;
 		paragraph.content
 			.replace(/\n$/, '')
 			.split('\n')
 			.forEach((line, i) => {
 				const term = new Block('definitionTerm', paragraph.startLine + i);
 				term.content = line;
+				term.segments = paragraph.segments;
+				term.base = paragraph.base + at;
+				term.start = this.toSource(paragraph, at);
+				at += line.length + 1;
 				term.open = false;
 				term.endLine = term.startLine;
 				list.append(term);
@@ -1135,6 +1216,7 @@ export class BlockParser {
 		// then look for new block starts inside the last matched container
 		while (!matchedLeaf) {
 			this.findNextNonspace();
+			this.blockStart = this.nextNonspace;
 			if (!this.indented && this.maybeSpecial && !this.maybeSpecial.test(line.slice(this.nextNonspace))) {
 				this.advanceNextNonspace();
 				break;
@@ -1177,8 +1259,19 @@ export class BlockParser {
 				this.finalize(container, this.lineNumber);
 			}
 		} else if (type === 'table') {
-			if (this.offset < line.length && !this.blank) container.rows.push(splitRow(line.slice(this.offset)));
+			if (this.offset < line.length && !this.blank) {
+				if (this.locator) {
+					const segments: number[][] = [];
+					container.rows.push(splitRow(line.slice(this.offset), segments, this.sourceOffset(this.offset)));
+					container.rowSegments.push(segments);
+					container.rowLines.push(this.lineNumber);
+					container.rowStarts.push(this.sourceOffset(this.offset));
+				} else {
+					container.rows.push(splitRow(line.slice(this.offset)));
+				}
+			}
 		} else if (this.offset < line.length && !this.blank) {
+			this.blockStart = this.nextNonspace;
 			this.addChild('paragraph');
 			this.advanceNextNonspace();
 			this.addLine();
@@ -1226,7 +1319,7 @@ export class BlockParser {
 		const walk = (block: Block) => {
 			if (block.type === 'paragraph') {
 				const before = block.content;
-				block.content = this.consumeDefinitions(block.content);
+				this.dropDefinitions(block);
 				// a paragraph that was nothing but definitions disappears
 				if (block.content !== before && !reNonSpace.test(block.content)) block.removed = true;
 			}
@@ -1244,23 +1337,55 @@ export class BlockParser {
 				if (task) {
 					block.checked = task[1] !== ' ';
 					first.content = first.content.slice(task[0].length);
+					first.base += task[0].length;
 				}
 			}
 		}
 
 		if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'definitionTerm') {
-			block.inlines = this.inline.parse(block.content);
+			block.inlines = this.inline.parse(block.content, this.spanOf(block.segments, block.base));
 		} else if (block.type === 'container' && block.containerTitle) {
-			block.inlines = this.inline.parse(block.containerTitle);
+			block.inlines = this.inline.parse(block.containerTitle, this.spanOf(block.segments, 0));
 		} else if (block.type === 'table') {
 			const width = block.align.length;
-			block.cells = block.rows.map((row) => {
+			block.cells = block.rows.map((row, r) => {
 				const cells: PhrasingContent[][] = [];
-				for (let i = 0; i < width; i++) cells.push(this.inline.parse(row[i] ?? ''));
+				for (let i = 0; i < width; i++) {
+					cells.push(this.inline.parse(row[i] ?? '', this.spanOf(block.rowSegments[r]?.[i] ?? [], 0)));
+				}
 				return cells;
 			});
 		}
 		for (const child of block.children) this.processInlines(child);
+	}
+
+	spanOf(segments: number[], base: number): ((from: number, to: number) => Position) | null {
+		const locator = this.locator;
+		if (!locator || segments.length === 0) return null;
+		const map = segmentMap(segments, base);
+		return (from, to) => locator.position(map(from), to > from ? map(to - 1) + 1 : map(from));
+	}
+
+	positionOf(block: Block): Position | undefined {
+		if (!this.locator) return undefined;
+		const start =
+			block.type === 'paragraph' && block.segments.length > 0
+				? this.toSource(block, 0)
+				: block.start >= 0
+					? block.start
+					: this.locator.lineStart(block.startLine + this.lineBase);
+		return this.locator.position(start, this.locator.lineEnd(block.endLine + this.lineBase));
+	}
+
+	rowPosition(table: Block, row: number): Position | undefined {
+		const locator = this.locator as Locator;
+		const line = (table.rowLines[row] as number) + this.lineBase;
+		return locator.position(table.rowStarts[row] ?? locator.lineStart(line), locator.lineEnd(line));
+	}
+
+	cellPosition(table: Block, row: number, cell: number): Position | undefined {
+		const span = this.spanOf(table.rowSegments[row]?.[cell] ?? [], 0);
+		return span?.(0, table.rows[row]?.[cell]?.length ?? 0);
 	}
 
 	// --- working tree -> AST
@@ -1270,11 +1395,13 @@ export class BlockParser {
 		for (const child of block.children) {
 			const node = this.convert(child);
 			if (!node) continue;
+			if (this.locator && !node.position) node.position = this.positionOf(child);
 			// entries separated by blank lines were parsed as separate lists; they're one list
 			const previous = out[out.length - 1];
 			if (node.type === 'definitionList' && previous?.type === 'definitionList') {
 				previous.children.push(...node.children);
 				previous.spread ||= node.spread;
+				if (previous.position && node.position) previous.position.end = node.position.end;
 				continue;
 			}
 			out.push(node);
@@ -1318,7 +1445,8 @@ export class BlockParser {
 							type: 'listItem',
 							checked: item.checked,
 							spread,
-							children: this.convertChildren(item)
+							children: this.convertChildren(item),
+							...(this.locator && { position: this.positionOf(item) })
 						})
 					)
 				};
@@ -1328,9 +1456,14 @@ export class BlockParser {
 					type: 'table',
 					align: block.align,
 					children: block.cells.map(
-						(cells): TableRow => ({
+						(cells, r): TableRow => ({
 							type: 'tableRow',
-							children: cells.map((children) => ({ type: 'tableCell', children }))
+							children: cells.map((children, i) => ({
+								type: 'tableCell',
+								children,
+								...(this.locator && block.rowSegments[r]?.[i] && { position: this.cellPosition(block, r, i) })
+							})),
+							...(this.locator && { position: this.rowPosition(block, r) })
 						})
 					)
 				};
@@ -1362,14 +1495,16 @@ export class BlockParser {
 				const children = block.children
 					.filter((child) => !child.removed)
 					.map(
-						(child): DefinitionTerm | DefinitionDescription =>
-							child.type === 'definitionTerm'
+						(child): DefinitionTerm | DefinitionDescription => ({
+							...(child.type === 'definitionTerm'
 								? { type: 'definitionTerm', children: child.inlines }
 								: {
 										type: 'definitionDescription',
 										spread: !(child.listData as ListData).tight,
 										children: this.convertChildren(child)
-									}
+									}),
+							...(this.locator && { position: this.positionOf(child) })
+						})
 					);
 				return {
 					type: 'definitionList',
