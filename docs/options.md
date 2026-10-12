@@ -13,6 +13,7 @@ Every option is optional, and `markdown()` takes both kinds. The Svelte componen
 | `indentedCode` | `true` | 4-space indented code blocks. |
 | `keepComments` | `false` | Keep HTML comments. They only render with `html: true`. |
 | `frontmatter` | `false` | Read a `---` block at the top of the document as metadata: it stays out of the output, and its keys and values land on the tree as `root.data.frontmatter`. Off by default, where `---` is a thematic break, as CommonMark says. See [Syntax](syntax.md#frontmatter). |
+| `positions` | `false` | Give every node the parser makes an mdast `position`: where it starts and ends in the source. See [The tree](tree.md#positions). |
 
 ## Rendering
 

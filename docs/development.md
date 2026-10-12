@@ -2,6 +2,7 @@
 
 ```sh
 npm test               # unit, plugin, sanitiser, CLI, Svelte parity, browser entity, pathological and spec tests
+npm run test:jitless   # the pathological tests with V8's JIT off, the way an interpreter runs them
 npm run spec           # every failing spec example, expected vs actual
 npm run spec -- --summary
 npm run check          # tsc + svelte-check
@@ -13,6 +14,8 @@ node scripts/gen-emoji.mjs   # regenerate src/emoji-data.ts from GitHub's gemoji
 ```
 
 The test suite fails if the number of passing CommonMark or GFM spec examples ever drops.
+
+The parser has to stay fast without a JIT, which is what an iOS app gets from JavaScriptCore. `npm run test:jitless` covers V8. JavaScriptCore's regex interpreter also tries a `^`-anchored pattern at every position in the string, so a regex that runs on more than one line must be sticky (`/y` with `lastIndex`). To check under JavaScriptCore itself, bundle with `npx esbuild <entry> --bundle --conditions=worker --alias:#named-entity=./src/named-entity.ts` and run the output with `jsc --useJIT=false`.
 
 Named entities are decoded by `src/named-entity.ts` (the table) or, in browser bundles, `src/named-entity.browser.ts` 
 (the DOM). `package.json` `imports` chooses between them as `#named-entity`, with `workerd` and `worker` ahead of 

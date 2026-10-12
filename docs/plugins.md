@@ -80,6 +80,8 @@ const mentions: Plugin = {
 };
 ```
 
+With `{ positions: true }`, nodes from block rules and inline rules get their `position` from the parser, so a rule never has to work it out. A node your `transform` creates has no position unless you give it one, for example by copying the node it replaces.
+
 A line rule's `chars` lists the characters its line can start with. Without it, every line is tried against the rule. A `wrapper`'s closing line goes to the innermost open wrapper that accepts it, unless it sits inside a fenced code block.
 
 A node type neither renderer knows draws itself from `data.hName`/`data.hProperties`, in HTML and Svelte alike: `{ type: 'keycap', data: { hName: 'kbd' }, children: […] }`. You only need a renderer for anything fancier.
