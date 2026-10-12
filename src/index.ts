@@ -33,7 +33,8 @@ export type {
 	LineRule,
 	ParseContext,
 	Plugin,
-	PluginInput
+	PluginInput,
+	WrapperRule
 } from './plugin.js';
 export type { Frontmatter } from './frontmatter.js';
 export type { SanitizeOptions } from './sanitize.js';

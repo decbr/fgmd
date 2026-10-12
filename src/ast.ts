@@ -165,6 +165,16 @@ export interface Element extends NodeBase {
 	children: (BlockContent | PhrasingContent)[];
 }
 
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+// <Name prop="value">children</Name> (components plugin)
+export interface Component extends NodeBase {
+	type: 'component';
+	name: string;
+	props: Record<string, JsonValue>;
+	children: (BlockContent | PhrasingContent)[];
+}
+
 export interface Text extends NodeBase {
 	type: 'text';
 	value: string;
@@ -262,6 +272,7 @@ export interface BlockContentMap {
 	math: Math;
 	definitionList: DefinitionList;
 	element: Element;
+	component: Component;
 }
 
 export interface PhrasingContentMap {
@@ -281,6 +292,7 @@ export interface PhrasingContentMap {
 	inlineMath: InlineMath;
 	abbr: Abbr;
 	element: Element;
+	component: Component;
 }
 
 export type BlockContent = BlockContentMap[keyof BlockContentMap];

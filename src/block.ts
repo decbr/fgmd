@@ -2,7 +2,7 @@
 // code, tables and the rest, then hands each leaf's text to the inline parser. the structure is
 // CommonMark's line-by-line open/close container algorithm, following commonmark.js, extended
 // with GFM tables, task list items and footnote definitions, definition lists, and plugin
-// block rules (raw fences, markdown containers, single lines).
+// block rules (raw fences, markdown containers, wrappers, single lines).
 import type {
 	AlignType,
 	BlockContent,
@@ -19,7 +19,7 @@ import { finishTree } from './finish.js';
 import { extractFrontmatter } from './frontmatter.js';
 import { InlineParser, toSticky, trimMd, type FootnoteLabel, type LinkDefinition } from './inline.js';
 import { resolveParseOptions, type ParseOptions, type ResolvedParseOptions } from './options.js';
-import type { ContainerRule, DefinitionRule, FenceRule, LineRule, ParseContext } from './plugin.js';
+import type { ContainerRule, DefinitionRule, FenceRule, LineRule, ParseContext, WrapperRule } from './plugin.js';
 import { CLOSETAG, OPENTAG, normalizeLabel, stripComments, tagfilter, unescapeString } from './util.js';
 
 const CODE_INDENT = 4;
@@ -121,6 +121,9 @@ class Block {
 	containerRule: ContainerRule | null = null;
 	containerName = '';
 	containerTitle = '';
+	// a plugin wrapper (<Tabs> ... </Tabs>) is a container opened and closed by the rule's lines
+	wrapperRule: WrapperRule | null = null;
+	wrapperState: unknown = null;
 	customNode: BlockContent | null = null;
 
 	constructor(
@@ -352,6 +355,17 @@ const specs: Record<BlockType, BlockSpec> = {
 	},
 	container: {
 		continue: (parser, block) => {
+			const wrapper = block.wrapperRule;
+			if (wrapper) {
+				if (parser.indented) return 0;
+				const line = parser.line.slice(parser.nextNonspace).trimEnd();
+				if (wrapper.close(line, block.wrapperState) && !parser.innerTakesLine(block, line)) {
+					while (parser.tip !== block) parser.finalize(parser.tip, parser.lineNumber - 1);
+					parser.finalize(block, parser.lineNumber);
+					return 2;
+				}
+				return 0;
+			}
 			if (!parser.indented) {
 				const from = parser.nextNonspace;
 				const run = countRun(parser.line.slice(from), block.fenceChar);
@@ -821,6 +835,23 @@ function containerStart(rule: ContainerRule): BlockStart {
 	};
 }
 
+// a plugin's wrapper: `<Tabs>` ... `</Tabs>`
+function wrapperStart(rule: WrapperRule): BlockStart {
+	return (parser, container) => {
+		if (parser.indented) return 0;
+		if (!rule.interrupt && (container.type === 'paragraph' || parser.lazyParagraph())) return 0;
+		if (container.depth >= MAX_NESTING) return 0;
+		const state = rule.open(parser.line.slice(parser.nextNonspace).trimEnd(), parser.context);
+		if (state === null || state === undefined) return 0;
+		parser.closeUnmatchedBlocks();
+		const block = parser.addChild('container');
+		block.wrapperRule = rule;
+		block.wrapperState = state;
+		parser.advanceOffset(parser.line.length - parser.offset, false);
+		return 2;
+	};
+}
+
 // a plugin's single-line block
 function lineStart(rule: LineRule): BlockStart {
 	return (parser, container) => {
@@ -890,9 +921,13 @@ export class BlockParser {
 				} else if (rule.kind === 'container') {
 					pluginStarts.push(containerStart(rule));
 					special += rule.char ?? ':';
+				} else if (rule.kind === 'wrapper') {
+					pluginStarts.push(wrapperStart(rule));
+					special += rule.chars;
 				} else {
 					pluginStarts.push(lineStart(rule));
-					anyLine = true;
+					if (rule.chars) special += rule.chars;
+					else anyLine = true;
 				}
 			}
 			this.definitionRules.push(...(plugin.definitions ?? []));
@@ -1043,13 +1078,20 @@ export class BlockParser {
 		return list;
 	}
 
-	// whether a closing fence seen by an open container really belongs to something inside it:
-	// an open fenced code or HTML block (whose content it is), or a deeper container it can close
 	innerTakesFence(container: Block, run: number): boolean {
 		for (let block: Block | null = this.tip; block && block !== container; block = block.parent) {
 			if (!block.open) continue;
 			if ((block.type === 'codeBlock' && block.fenced) || block.type === 'htmlBlock') return true;
 			if (block.type === 'container' && block.fenceChar === container.fenceChar && block.fenceLength <= run) return true;
+		}
+		return false;
+	}
+
+	innerTakesLine(container: Block, line: string): boolean {
+		for (let block: Block | null = this.tip; block && block !== container; block = block.parent) {
+			if (!block.open) continue;
+			if ((block.type === 'codeBlock' && block.fenced) || block.type === 'htmlBlock') return true;
+			if (block.wrapperRule?.close(line, block.wrapperState)) return true;
 		}
 		return false;
 	}
@@ -1296,6 +1338,9 @@ export class BlockParser {
 				return node;
 			}
 			case 'container': {
+				if (block.wrapperRule) {
+					return block.wrapperRule.node(this.convertChildren(block), block.wrapperState, this.context) ?? null;
+				}
 				const node: Container = {
 					type: 'container',
 					name: block.containerName,

@@ -9,6 +9,7 @@
 		anchorAttributes,
 		breakLines,
 		classFor,
+		componentProps,
 		containerView,
 		cx,
 		describe,
@@ -137,6 +138,11 @@
 					this={el.tag}
 					{...el.attributes}><Self nodes={node.children} {block} /></svelte:element
 				>{/if}{/if}
+	{:else if node.type === 'component' && ctx.components[node.name]}
+		<!-- one with nothing to draw it falls through to the last branch: its content, or its hName -->
+		{@const Component = ctx.components[node.name]}
+		{#if node.children.length > 0}<Component {...componentProps(node, ctx.options)}>{@render kids()}</Component
+			>{:else}<Component {...componentProps(node, ctx.options)} />{/if}
 	{:else if node.type === 'html'}
 		{node.value}
 	{:else if node.type === 'footnoteDefinition'}
@@ -166,7 +172,7 @@
 				>{/if}
 		{:else}[^{node.label}]{/if}
 	{:else}
-		<!-- lists, quotes, definitions, emphasis, links, math, and plugin nodes with an hName -->
+		<!-- lists, quotes, definitions, emphasis, links, math, components, and plugin nodes with an hName -->
 		{@const el = d(node)}
 		{#if el}<svelte:element this={el.tag} {...el.attributes}
 				>{#if 'children' in node}{@render kids()}{:else}{valueOf(node)}{/if}</svelte:element

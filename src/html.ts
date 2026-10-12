@@ -223,6 +223,8 @@ class HtmlRenderer {
 				return this.container(node);
 			case 'element':
 				return this.element(node);
+			case 'component':
+				return this.generic(node, false);
 			case 'footnoteDefinition':
 				// collected into the footnote section at the end
 				return;

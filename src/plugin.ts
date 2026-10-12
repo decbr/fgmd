@@ -1,5 +1,10 @@
 // the plugin API. every built-in extension (callouts, typography, math, ...) is written against
 // exactly this, so anything they do, your own plugin can do too.
+
+// theres lots of comments in this file. this is essentially the plugin documentation!
+// sorry if thats inconvinient...
+
+
 import type { BlockContent, Container, PhrasingContent, Root } from './ast.js';
 import type { RenderContext, ResolvedParseOptions } from './options.js';
 
@@ -71,9 +76,29 @@ export interface LineRule {
 	node(match: RegExpExecArray, ctx: ParseContext): BlockContent | null | undefined;
 	// may the line cut a paragraph short? default false
 	interrupt?: boolean;
+	// the characters the line can start with. without it every line is tried against the rule,
+	// which costs a little on every document
+	chars?: string;
 }
 
-export type BlockRule = FenceRule | ContainerRule | LineRule;
+// a container whose content is markdown, opened and closed by whole lines of your choosing, e.g.
+// `<Tabs>` ... `</Tabs>`. a closing line goes to the innermost open wrapper that accepts it
+export interface WrapperRule<State = unknown> {
+	kind: 'wrapper';
+	// the characters an opening line can start with
+	chars: string;
+	// sees the line without its indentation. return state for a new wrapper, or null to decline
+	open(line: string, ctx: ParseContext): State | null | undefined;
+	// sees each later line without its indentation (or trailing space): does it close this wrapper?
+	close(line: string, state: State): boolean;
+	// the node for a closed (or unclosed, at the end of its parent) wrapper. null drops it
+	node(children: BlockContent[], state: State, ctx: ParseContext): BlockContent | null | undefined;
+	// may the opening line cut a paragraph short? default false
+	interrupt?: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type BlockRule = FenceRule | ContainerRule | LineRule | WrapperRule<any>;
 
 // definition lines consumed from the start of a paragraph before inline parsing, the way
 // `[ref]: /url` lines are, e.g. `*[HTML]: HyperText Markup Language`. matched sticky at the

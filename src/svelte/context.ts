@@ -1,5 +1,5 @@
 // what the root <Markdown> shares with every <Nodes> below it
-import { getContext, setContext, type Snippet } from 'svelte';
+import { getContext, setContext, type Component, type Snippet } from 'svelte';
 import type { Attributes, Heading, Node } from '../ast.js';
 import type { RenderOptions } from '../options.js';
 import type { AnchorConfig, FootnoteConfig, FootnoteIndex } from '../shared.js';
@@ -15,9 +15,13 @@ export interface NodeSnippetProps<T extends Node = Node> {
 
 export type NodeSnippet<T extends Node = Node> = Snippet<[NodeSnippetProps<T>]>;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ComponentMap = Readonly<Record<string, Component<any>>>;
+
 export interface MarkdownContext {
 	readonly options: RenderOptions;
 	readonly snippets: Readonly<Record<string, NodeSnippet | undefined>>;
+	readonly components: ComponentMap;
 	readonly footnotes: FootnoteIndex;
 	readonly headingIds: ReadonlyMap<Heading, string>;
 	readonly prefix: string;

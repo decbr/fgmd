@@ -4,6 +4,7 @@
 import type {
 	Attributes,
 	BlockContent,
+	Component,
 	Container,
 	Data,
 	Element,
@@ -11,6 +12,7 @@ import type {
 	FootnoteReference,
 	Heading,
 	Image,
+	JsonValue,
 	Node,
 	Paragraph,
 	PhrasingContent,
@@ -219,6 +221,22 @@ export function elementProperties(node: Element, options: RenderOptions): Attrib
 	const out: Attributes = {};
 	for (const [name, value] of Object.entries(node.properties)) {
 		if (URL_ATTRIBUTES.has(name) && typeof value === 'string') {
+			const url = resolveUrl(value, name === 'src' || name === 'poster' ? 'image' : 'link', options);
+			if (url === null) continue;
+			out[name] = url;
+		} else {
+			out[name] = value;
+		}
+	}
+	return out;
+}
+
+// a component's props, with URL-valued ones (href, src...) checked by the urlPolicy like an
+// element's. a rejected URL drops the prop
+export function componentProps(node: Component, options: RenderOptions): Record<string, JsonValue> {
+	const out: Record<string, JsonValue> = {};
+	for (const [name, value] of Object.entries(node.props)) {
+		if (URL_ATTRIBUTES.has(name.toLowerCase()) && typeof value === 'string') {
 			const url = resolveUrl(value, name === 'src' || name === 'poster' ? 'image' : 'link', options);
 			if (url === null) continue;
 			out[name] = url;

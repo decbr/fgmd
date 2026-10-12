@@ -11,20 +11,18 @@
 	import type { MarkdownOptions } from '../options.js';
 	import { parseInline } from '../parse-inline.js';
 	import { anchorConfig, footnoteConfig, indexFootnotes } from '../shared.js';
-	import { setMarkdownContext, type NodeSnippet } from './context.js';
+	import { setMarkdownContext, type ComponentMap, type NodeSnippet } from './context.js';
 	import Nodes from './Nodes.svelte';
 	import { splitProps, type NodeSnippets } from './props.js';
 
 	interface Props extends Omit<MarkdownOptions, 'renderers' | 'html'>, Omit<NodeSnippets, 'html'> {
-		// inline markdown to render
-		source?: string;
-		// or phrasing content you parsed yourself
-		ast?: PhrasingContent[];
-		// the html option (true / 'sanitize'), or a snippet for html nodes
-		html?: boolean | 'sanitize' | NodeSnippet<Html>;
+		source?: string; // inline markdown to render
+		ast?: PhrasingContent[]; // or phrasing content you parsed yourself
+		html?: boolean | 'sanitize' | NodeSnippet<Html>; // the html option (true / 'sanitize'), or a snippet for html nodes
+		components?: ComponentMap; // Svelte components for the components plugin's <Name /> tags, by name
 	}
 
-	let { source = '', ast, ...rest }: Props = $props();
+	let { source = '', ast, components = {}, ...rest }: Props = $props();
 
 	const split = $derived(splitProps(rest));
 	const options = $derived(split.options);
@@ -42,12 +40,14 @@
 		get snippets() {
 			return split.snippets;
 		},
+		get components() {
+			return components;
+		},
 		get footnotes() {
 			return footnotes;
 		},
-		// headings are block content, so there are never any ids to hand out
-		headingIds: new Map(),
-		get prefix() {
+		headingIds: new Map(), // headings are block content, so there are never any ids to hand out
+        get prefix() {
 			return prefix;
 		},
 		get anchors() {

@@ -37,22 +37,19 @@
 		type FootnoteEntry
 	} from '../shared.js';
 	import { normalizeUrl } from '../util.js';
-	import { setMarkdownContext, type NodeSnippet } from './context.js';
+	import { setMarkdownContext, type ComponentMap, type NodeSnippet } from './context.js';
 	import Nodes from './Nodes.svelte';
 	import { splitProps, type NodeSnippets } from './props.js';
 
 	interface Props extends Omit<MarkdownOptions, 'renderers' | 'html'>, Omit<NodeSnippets, 'html'> {
-		// markdown to render
-		source?: string;
-		// or an already parsed tree (a Root, or phrasing content for inline use)
-		ast?: Root | PhrasingContent[];
-		// parse source as inline markdown and render it without a wrapping element
-		inline?: boolean;
-		// the html option (true / 'sanitize'), or a snippet for html nodes
-		html?: boolean | 'sanitize' | NodeSnippet<Html>;
+		source?: string; // markdown to render
+		ast?: Root | PhrasingContent[]; // or an already parsed tree (a Root, or phrasing content for inline use)
+		inline?: boolean; // parse source as inline markdown and render it without a wrapping element
+		html?: boolean | 'sanitize' | NodeSnippet<Html>; // the html option (true / 'sanitize'), or a snippet for html nodes
+		components?: ComponentMap; // Svelte components for the components plugin's <Name /> tags, by name
 	}
 
-	let { source = '', ast, inline = false, ...rest }: Props = $props();
+	let { source = '', ast, inline = false, components = {}, ...rest }: Props = $props();
 
 	const split = $derived(splitProps(rest));
 	const options = $derived(split.options);
@@ -74,6 +71,9 @@
 		},
 		get snippets() {
 			return split.snippets;
+		},
+		get components() {
+			return components;
 		},
 		get footnotes() {
 			return footnotes;
