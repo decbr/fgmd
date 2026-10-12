@@ -23,6 +23,7 @@ import {
 	footnoteIds,
 	indexFootnotes,
 	isBlock,
+	asComponent,
 	isImageOnly,
 	isSidenote,
 	splitFootnoteTitle,
@@ -174,6 +175,8 @@ class HtmlRenderer {
 	}
 
 	private renderDefault(node: Node, tight: boolean): void {
+		// a component's content is never tight, even in a tight list
+		if (asComponent(node)) return this.generic(node, false);
 		switch (node.type) {
 			case 'root':
 				return this.blocks(node.children, false);
@@ -223,8 +226,6 @@ class HtmlRenderer {
 				return this.container(node);
 			case 'element':
 				return this.element(node);
-			case 'component':
-				return this.generic(node, false);
 			case 'footnoteDefinition':
 				// collected into the footnote section at the end
 				return;

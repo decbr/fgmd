@@ -15,10 +15,10 @@
 //
 // the renderer supplies each component by name: the Svelte component's `components` prop, or
 // `render` here for HTML. a component with nothing to draw it renders just its content
-import type { Component, JsonValue, Node, Paragraph, PhrasingContent } from '../ast.js';
+import type { BlockContent, Component, JsonValue, Node, Paragraph, PhrasingContent } from '../ast.js';
 import type { RenderContext } from '../options.js';
 import type { Plugin } from '../plugin.js';
-import { componentProps } from '../shared.js';
+import { asComponent, componentProps } from '../shared.js';
 import { decodeEntities } from '../util.js';
 
 export interface ComponentOptions {
@@ -150,9 +150,9 @@ export function components(options: ComponentOptions = {}): Plugin {
 					const m = sticky(reClose, line, 0);
 					return m !== null && m[0].length === line.length && m[1] === tag.name;
 				},
-				node(children, tag: Tag, ctx): Component {
+				node(children, tag: Tag, ctx) {
 					ctx.data.components = true;
-					return { type: 'component', name: tag.name, props: tag.props, children };
+					return block({ type: 'component', name: tag.name, props: tag.props, children });
 				}
 			},
 			{
@@ -163,7 +163,7 @@ export function components(options: ComponentOptions = {}): Plugin {
 					const tag = lineTag(match[0].trimEnd());
 					if (!tag?.selfClosing) return null;
 					ctx.data.components = true;
-					return { type: 'component', name: tag.name, props: tag.props, children: [] };
+					return block({ type: 'component', name: tag.name, props: tag.props, children: [] });
 				}
 			}
 		],
@@ -186,7 +186,7 @@ export function components(options: ComponentOptions = {}): Plugin {
 					if (!tag || !allowed(tag.name)) return null;
 					state.pos = tag.end;
 					state.data.components = true;
-					if (tag.selfClosing) return { type: 'component', name: tag.name, props: tag.props, children: [] };
+					if (tag.selfClosing) return inline({ type: 'component', name: tag.name, props: tag.props, children: [] });
 					state.data.componentMarkers = true;
 					return marker({ type: 'componentOpen', name: tag.name, props: tag.props, raw: s.slice(at, tag.end) });
 				}
@@ -205,6 +205,10 @@ export function components(options: ComponentOptions = {}): Plugin {
 		}
 	};
 }
+
+// component nodes sit outside the content maps (see ast.ts), so they go into the tree cast
+const block = (c: Component) => c as unknown as BlockContent;
+const inline = (c: Component) => c as unknown as PhrasingContent;
 
 // markers travel through the inline parser as phrasing content until the transform folds them
 const marker = (m: Marker) => m as unknown as PhrasingContent;
@@ -253,12 +257,12 @@ function foldList(nodes: Node[]): Node[] {
 		const frame = open[i] as { marker: Marker; index: number };
 		for (const dropped of open.splice(i)) counts.set(dropped.marker.name, (counts.get(dropped.marker.name) as number) - 1);
 		const children = out.splice(frame.index + 1);
-		out[frame.index] = {
+		out[frame.index] = inline({
 			type: 'component',
 			name: frame.marker.name,
 			props: frame.marker.props,
 			children: toText(children) as PhrasingContent[]
-		};
+		});
 	}
 	return toText(out);
 }
@@ -286,7 +290,7 @@ function unwrapParagraphs(node: Node): void {
 	for (let i = 0; i < children.length; i++) {
 		const child = children[i] as Node;
 		const only = child.type === 'paragraph' ? soleComponent(child) : null;
-		if (only) children[i] = only;
+		if (only) children[i] = block(only);
 		else unwrapParagraphs(child);
 	}
 }
@@ -294,5 +298,5 @@ function unwrapParagraphs(node: Node): void {
 function soleComponent(paragraph: Paragraph): Component | null {
 	const content = paragraph.children.filter((c) => !(c.type === 'text' && !/\S/.test(c.value)));
 	const only = content[0];
-	return content.length === 1 && only?.type === 'component' ? only : null;
+	return content.length === 1 && only ? asComponent(only) : null;
 }

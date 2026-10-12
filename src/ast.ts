@@ -167,7 +167,8 @@ export interface Element extends NodeBase {
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
-// <Name prop="value">children</Name> (components plugin)
+// <Name prop="value">children</Name>, from the components plugin. it isn't in the content maps
+// below, so code that handles every node type keeps compiling; get at it with asComponent()
 export interface Component extends NodeBase {
 	type: 'component';
 	name: string;
@@ -272,7 +273,6 @@ export interface BlockContentMap {
 	math: Math;
 	definitionList: DefinitionList;
 	element: Element;
-	component: Component;
 }
 
 export interface PhrasingContentMap {
@@ -292,7 +292,6 @@ export interface PhrasingContentMap {
 	inlineMath: InlineMath;
 	abbr: Abbr;
 	element: Element;
-	component: Component;
 }
 
 export type BlockContent = BlockContentMap[keyof BlockContentMap];

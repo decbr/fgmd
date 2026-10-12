@@ -231,6 +231,12 @@ export function elementProperties(node: Element, options: RenderOptions): Attrib
 	return out;
 }
 
+// the node as a component, or null. component nodes sit outside the content maps, so checking
+// node.type can't narrow to one
+export function asComponent(node: { type: string }): Component | null {
+	return node.type === 'component' ? (node as Component) : null;
+}
+
 // a component's props, with URL-valued ones (href, src...) checked by the urlPolicy like an
 // element's. a rejected URL drops the prop
 export function componentProps(node: Component, options: RenderOptions): Record<string, JsonValue> {

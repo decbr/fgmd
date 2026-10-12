@@ -46,6 +46,7 @@ export { toString } from './inline.js';
 export { registerPlugin, resolvePlugins } from './plugin.js';
 export * from './plugins/index.js';
 export { SANITIZE_DEFAULTS } from './sanitize.js';
+export { asComponent } from './shared.js';
 export { DEFAULT_SCHEMES, allowSchemes, defaultUrlPolicy } from './url.js';
 export { mapText, visit } from './visit.js';
 export { VERSION } from './version.js';

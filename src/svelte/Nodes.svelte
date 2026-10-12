@@ -7,6 +7,7 @@
 	import { VOID_ELEMENTS } from '../sanitize.js';
 	import {
 		anchorAttributes,
+		asComponent,
 		breakLines,
 		classFor,
 		componentProps,
@@ -65,6 +66,7 @@
 
 {#each nodes as node, index}
 	{@const snippet = ctx.snippets[node.type]}
+	{@const component = asComponent(node)}
 	{#snippet kids()}<Self
 			nodes={childNodes(node)}
 			block={childBlock(node)}
@@ -138,11 +140,11 @@
 					this={el.tag}
 					{...el.attributes}><Self nodes={node.children} {block} /></svelte:element
 				>{/if}{/if}
-	{:else if node.type === 'component' && ctx.components[node.name]}
+	{:else if component && ctx.components[component.name]}
 		<!-- one with nothing to draw it falls through to the last branch: its content, or its hName -->
-		{@const Component = ctx.components[node.name]}
-		{#if node.children.length > 0}<Component {...componentProps(node, ctx.options)}>{@render kids()}</Component
-			>{:else}<Component {...componentProps(node, ctx.options)} />{/if}
+		{@const Component = ctx.components[component.name]}
+		{#if component.children.length > 0}<Component {...componentProps(component, ctx.options)}>{@render kids()}</Component
+			>{:else}<Component {...componentProps(component, ctx.options)} />{/if}
 	{:else if node.type === 'html'}
 		{node.value}
 	{:else if node.type === 'footnoteDefinition'}
