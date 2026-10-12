@@ -74,10 +74,28 @@ Each snippet gets:
 
 A link or image whose URL the policy rejects never reaches your snippet. Snippets also work for custom plugin node types. For the `html` node type, pass `html={snippet}`; the prop still accepts `true`/`'sanitize'` as the option.
 
+## Components
+
+With the [components plugin](components.md), `components` maps each name to a Svelte component. Each one receives its props, with URL props already checked, and the content as `children`:
+
+```svelte
+<script lang="ts">
+  import { Markdown } from '@decbr/fgmd/svelte';
+  import { components } from '@decbr/fgmd';
+  import Chart from '$lib/Chart.svelte';
+  import Tabs from '$lib/Tabs.svelte';
+</script>
+
+<Markdown {source} plugins={[components()]} indentedCode={false} components={{ Chart, Tabs }} />
+```
+
+A name with no component renders only its content. To draw every component yourself, use a `component` snippet instead; the node carries `name` and `props`.
+
 ## Props
 
 The component takes every [option](options.md) except `renderers` and `highlight`, which are for HTML output; use snippets instead. It also takes:
 - `source`
+- `components`: Svelte components for the [components plugin](components.md), by name
 - `ast`: a tree you parsed yourself (see [the tree](tree.md))
 - `inline`: render inline markdown with no wrapping element. For short copy, `<InlineMarkdown>` does the same with a smaller bundle
 

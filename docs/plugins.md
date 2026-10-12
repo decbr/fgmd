@@ -1,6 +1,6 @@
 # Plugins
 
-fgmd has eight built-in plugins, each written against the same [plugin API](#writing-a-plugin) you can use yourself.
+fgmd has nine built-in plugins, each written against the same [plugin API](#writing-a-plugin) you can use yourself.
 
 Pass plugins as objects, or by name so plain JSON configs (the CLI, PHP) can use them:
 
@@ -23,7 +23,12 @@ Names are registered when `@decbr/fgmd` is imported. The Svelte components don't
 | `abbreviations({ titles })` | `*[HTML]: HyperText Markup Language` anywhere in the document, plus `titles` from options | `<abbr title="…">HTML</abbr>` on whole words |
 | `math({ render })` | `$inline$` (Pandoc rules: `$5 and $10` stays money), `$$display$$`, and `$$` fenced blocks | `<span class="math math-inline">` / `<div class="math math-display">` holding escaped TeX, ready for KaTeX auto-render. Pass `render: (tex, { display }) => katex.renderToString(tex, { displayMode: display })` for HTML output |
 | `emoji({ map, lookup })` | `:shortcode:` | the emoji. `@decbr/fgmd/emoji` exports GitHub's full set (`gemoji`); `lookup` can return nodes, e.g. custom images |
+| `components({ allow, render })` | MDX-style `<Chart data={[1, 2]} />`, `<Tabs>` … `</Tabs>` around Markdown, and inline `<Kbd>Ctrl</Kbd>`. See [Components](components.md) | whatever you map the name to; without a mapping, just the content |
 | `wikilinks({ resolve, exists, embeds, resolveEmbed })` | `[[Page]]`, `[[Page\|label]]`, `[[Page#Heading]]`, `![[image.png]]` | `<a class="wikilink">`, plus `wikilink-new` when `exists(page)` is false |
+
+## Components
+
+`components()` lets Markdown use your own components, as MDX does, with props that are data rather than code. It's safe for content anyone can write. See [Components](components.md) for the syntax, how it works, and how it compares with MDX.
 
 ## Writing a plugin
 
@@ -56,7 +61,10 @@ const mentions: Plugin = {
   block: [
     { kind: 'fence', char: '%', length: 3, node: (content, info) => ({ type: 'code', lang: 'mermaid', meta: info || null, value: content }) },
     { kind: 'container', names: ['aside'], node: (c) => { c.data = { hName: 'aside' }; } },
-    { kind: 'line', match: /^\[\[toc\]\]$/, node: () => ({ type: 'html', value: '<nav class="toc"></nav>' }) }
+    { kind: 'line', match: /^\[\[toc\]\]$/, chars: '[', node: () => ({ type: 'html', value: '<nav class="toc"></nav>' }) },
+    // markdown between an opening and a closing line of your choosing
+    { kind: 'wrapper', chars: '@', open: (line) => (line === '@box' ? {} : null), close: (line) => line === '@end',
+      node: (children) => ({ type: 'container', name: 'box', title: null, collapsible: null, children }) }
   ],
 
   // lines consumed from the start of a paragraph, the way [ref]: /url is
@@ -71,6 +79,8 @@ const mentions: Plugin = {
   renderers: { insert: (node, ctx) => `<ins>${ctx.children()}</ins>` }
 };
 ```
+
+A line rule's `chars` lists the characters its line can start with. Without it, every line is tried against the rule. A `wrapper`'s closing line goes to the innermost open wrapper that accepts it, unless it sits inside a fenced code block.
 
 A node type neither renderer knows draws itself from `data.hName`/`data.hProperties`, in HTML and Svelte alike: `{ type: 'keycap', data: { hName: 'kbd' }, children: […] }`. You only need a renderer for anything fancier.
 

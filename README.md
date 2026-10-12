@@ -12,7 +12,7 @@ View the site at [fgmd.dev](https://fgmd.dev/), view the site's source at [/site
 
 - **Standard.** Passes all 652 CommonMark 0.31.2 spec examples and all 24 GFM extension examples.
 - **Safe by default.** Raw HTML is shown as text unless you opt in, and only http, https, mailto, tel and relative URLs get through. Hostile input can't hang or crash it.
-- **Extensible.** Eight built-in plugins, plus a plugin API for new inline syntax, block syntax and tree transforms.
+- **Extensible.** Nine built-in plugins, plus a plugin API for new inline syntax, block syntax and tree transforms.
 - **Zero runtime dependencies.** The library uses no Node APIs, so it runs in Node, Deno, Workers and browsers. It has a first-class Svelte 5 component and a CLI for other languages.
 
 ## Install
@@ -95,6 +95,7 @@ You can also draw any node your own way with a snippet. For that, and more, see 
 - [Syntax](docs/syntax.md): what's supported, and what changes when coming from a regex-based parser
 - [Options](docs/options.md): every parsing and rendering option
 - [Plugins](docs/plugins.md): the built-ins, and writing your own
+- [Components](docs/components.md): components inside Markdown, MDX-style, without running code
 - [Safety](docs/safety.md): what the defaults protect against, and how `html: 'sanitize'` works
 - [Svelte](docs/svelte.md): the component, snippets and props
 - [React](docs/react.md): rendering in React and Next.js

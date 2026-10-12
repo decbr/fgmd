@@ -44,7 +44,7 @@ Safe by default
 : Raw HTML is text unless you ask for it, and only `http`, `https`, `mailto`, `tel` and relative URLs survive. Hostile input can't hang it or crash it.
 
 Extensible
-: Eight built-in plugins, and a plugin API for new inline syntax, new block syntax and tree transforms.
+: Nine built-in plugins, and a plugin API for new inline syntax, new block syntax and tree transforms.
 
 Nothing underneath
 : Zero runtime dependencies, no Node APIs. It runs in Node, Deno, browsers and - as this site demonstrates - a Cloudflare Worker.

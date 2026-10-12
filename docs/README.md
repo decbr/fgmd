@@ -3,6 +3,7 @@
 - [Syntax](syntax.md): what's supported, and what changes when coming from a regex-based parser
 - [Options](options.md): every parsing and rendering option
 - [Plugins](plugins.md): the built-ins, and writing your own
+- [Components](components.md): components inside Markdown, MDX-style, without running code
 - [Safety](safety.md): what the defaults protect against, and how `html: 'sanitize'` works
 - [Svelte](svelte.md): the component, snippets and props
 - [React](react.md): rendering in React and Next.js

@@ -39,6 +39,7 @@ A serialiser from the tree back to Markdown. It makes a formatter possible, alon
 ## Not planned
 
 - **Embedding a JavaScript engine in Go and similar languages.** Tried with goja and a pure-Go QuickJS. Both produced the right output after workarounds, but ran about 18 times slower than Node on ordinary documents, and hostile input could stall them for minutes. Other languages use the CLI, and a native port is the answer if one is ever needed.
+- **A full MDX compiler.** MDX turns a file into a JavaScript module, with `import`, `export` and `{expressions}` that run. That needs a JavaScript parser, so it can't have zero dependencies, and output that runs code isn't safe by default. The [components plugin](components.md) gives the part most people use MDX for, components in Markdown, with literal props only. `@mdx-js/mdx` exists for the rest.
 - **More plugins for the sake of it.** A few excellent built-ins beat many half-maintained ones. The [plugin API](plugins.md) covers the rest.
 - **Rendering raw HTML natively.** Native renderers draw the sanitised elements they understand and skip everything else.
 
