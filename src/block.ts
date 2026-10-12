@@ -61,7 +61,7 @@ const reTaskMarker = /^\[([ xX])\](?=[ \t\n]|$)[ \t]*/;
 const reDefinitionMarker = /^:[ \t]/;
 const reContainerOpening = /^[ \t]*([A-Za-z][\w-]*)(?:[ \t]+(.*?))?[ \t]*$/;
 // the start of a [//]: # (...) comment line; the balanced (...) is scanned by hand
-const reCommentLine = /^\[(?:\/\/|comment)\]:[ \t]*(?:#|<>)[ \t]*\(/;
+const reCommentLine = /\[(?:\/\/|comment)\]:[ \t]*(?:#|<>)[ \t]*\(/y;
 
 type BlockType =
 	| 'document'
@@ -208,6 +208,7 @@ function parseAlign(cell: string): AlignType {
 
 // length of a [//]: # (...) comment line at the start of s (parens may nest), or 0
 function commentLineLength(s: string): number {
+	reCommentLine.lastIndex = 0;
 	const m = reCommentLine.exec(s);
 	if (!m) return 0;
 	let i = m[0].length;
@@ -959,26 +960,31 @@ export class BlockParser {
 
 	// --- line bookkeeping
 
+	private scanFrom = -1;
+
 	findNextNonspace(): void {
-		const line = this.line;
-		let i = this.offset;
-		let cols = this.column;
-		let c = '';
-		while ((c = line.charAt(i)) !== '') {
-			if (c === ' ') {
-				i++;
-				cols++;
-			} else if (c === '\t') {
-				i++;
-				cols += 4 - (cols % 4);
-			} else {
-				break;
+		if (this.scanFrom < 0 || this.offset < this.scanFrom || this.offset > this.nextNonspace) {
+			const line = this.line;
+			let i = this.offset;
+			let cols = this.column;
+			let c = '';
+			while ((c = line.charAt(i)) !== '') {
+				if (c === ' ') {
+					i++;
+					cols++;
+				} else if (c === '\t') {
+					i++;
+					cols += 4 - (cols % 4);
+				} else {
+					break;
+				}
 			}
+			this.blank = c === '\n' || c === '\r' || c === '';
+			this.scanFrom = this.offset;
+			this.nextNonspace = i;
+			this.nextNonspaceColumn = cols;
 		}
-		this.blank = c === '\n' || c === '\r' || c === '';
-		this.nextNonspace = i;
-		this.nextNonspaceColumn = cols;
-		this.indent = cols - this.column;
+		this.indent = this.nextNonspaceColumn - this.column;
 		this.indented = this.indent >= CODE_INDENT;
 	}
 
@@ -1104,6 +1110,7 @@ export class BlockParser {
 		this.blank = false;
 		this.partiallyConsumedTab = false;
 		this.lineNumber += 1;
+		this.scanFrom = -1;
 		const line = input.includes('\0') ? input.replace(/\0/g, '�') : input;
 		this.line = line;
 
