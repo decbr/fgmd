@@ -3,7 +3,7 @@ title: fgmd
 description: A Markdown parser that passes every CommonMark and GFM spec example with no dependencies.
 ---
 
-# a f***ing good markdown parser
+# finally, a good markdown parser
 
 Every page on this site is a Markdown file. The parser runs with `html: false`, so a `<div>` typed into one of those files renders as the characters `<div>` and nothing else. There is no template language here, no components, and no HTML to fall back on. {.lead}
 

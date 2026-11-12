@@ -27,7 +27,7 @@ import {
 // from the command line, "emoji" means GitHub's full shortcode set
 registerPlugin('emoji', (options) => emoji({ map: gemoji, ...options }));
 
-const HELP = `fgmd ${VERSION} - a fucking good markdown parser
+const HELP = `fgmd ${VERSION} - finally, a good markdown parser.
 
 usage:
   fgmd [file]            render a file (or stdin) to HTML on stdout

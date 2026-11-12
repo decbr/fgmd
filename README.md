@@ -6,7 +6,7 @@
 [![docs](https://img.shields.io/badge/docs-view-blue.svg)](https://github.com/decbr/fgmd/tree/master/docs)
 [![site](https://img.shields.io/badge/site-view-royalblue.svg)](https://fgmd.dev)
 
-A f***ing good Markdown parser.
+Finally, good markdown.
 
 View the site at [fgmd.dev](https://fgmd.dev/), view the site's source at [/site](/site)
 

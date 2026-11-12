@@ -23,7 +23,7 @@ import { highlight } from './highlight.js';
 
 export const SITE = {
 	name: 'fgmd',
-	tagline: 'a f***ing good markdown parser',
+	tagline: 'finally, a good markdown parser',
 	origin: 'https://fgmd.dev',
 	repo: 'https://github.com/decbr/fgmd',
 	// where a page's own source lives on GitHub, so every page can point at the file it came from
